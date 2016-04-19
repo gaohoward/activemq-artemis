@@ -26,6 +26,7 @@ import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.server.QueueCreator;
 import org.apache.activemq.artemis.core.server.RoutingContext;
+import org.apache.activemq.artemis.core.server.SendResult;
 import org.apache.activemq.artemis.core.server.ServerMessage;
 import org.apache.activemq.artemis.core.transaction.Transaction;
 
@@ -78,16 +79,16 @@ public interface PostOffice extends ActiveMQComponent {
               boolean direct,
               boolean rejectDuplicates) throws Exception;
 
-   void route(ServerMessage message,
-              QueueCreator queueCreator,
-              RoutingContext context,
-              boolean direct) throws Exception;
+   SendResult route(ServerMessage message,
+                    QueueCreator queueCreator,
+                    RoutingContext context,
+                    boolean direct) throws Exception;
 
-   void route(ServerMessage message,
-              QueueCreator queueCreator,
-              RoutingContext context,
-              boolean direct,
-              boolean rejectDuplicates) throws Exception;
+   SendResult route(ServerMessage message,
+                    QueueCreator queueCreator,
+                    RoutingContext context,
+                    boolean direct,
+                    boolean rejectDuplicates) throws Exception;
 
    MessageReference reroute(ServerMessage message, Queue queue, Transaction tx) throws Exception;
 

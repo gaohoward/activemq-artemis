@@ -132,7 +132,9 @@ public interface ServerSession extends SecurityAuth {
 
    void sendContinuations(int packetSize, long totalBodySize, byte[] body, boolean continues) throws Exception;
 
-   void send(ServerMessage message, boolean direct) throws Exception;
+   SendResult send(ServerMessage message, boolean direct, boolean noAutoCreateQueue) throws Exception;
+
+   SendResult send(ServerMessage message, boolean direct) throws Exception;
 
    void sendLarge(MessageInternal msg) throws Exception;
 

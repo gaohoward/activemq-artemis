@@ -65,6 +65,7 @@ import org.apache.activemq.artemis.core.server.QueueCreator;
 import org.apache.activemq.artemis.core.server.QueueFactory;
 import org.apache.activemq.artemis.core.server.RouteContextList;
 import org.apache.activemq.artemis.core.server.RoutingContext;
+import org.apache.activemq.artemis.core.server.SendResult;
 import org.apache.activemq.artemis.core.server.ServerMessage;
 import org.apache.activemq.artemis.core.server.group.GroupingHandler;
 import org.apache.activemq.artemis.core.server.impl.RoutingContextImpl;
@@ -592,19 +593,20 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
    }
 
    @Override
-   public void route(final ServerMessage message,
-                     final QueueCreator queueCreator,
-                     final RoutingContext context,
-                     final boolean direct) throws Exception {
-      route(message, queueCreator, context, direct, true);
+   public SendResult route(final ServerMessage message,
+                           final QueueCreator queueCreator,
+                           final RoutingContext context,
+                           final boolean direct) throws Exception {
+      return route(message, queueCreator, context, direct, true);
    }
 
    @Override
-   public void route(final ServerMessage message,
-                     final QueueCreator queueCreator,
-                     final RoutingContext context,
-                     final boolean direct,
-                     boolean rejectDuplicates) throws Exception {
+   public SendResult route(final ServerMessage message,
+                           final QueueCreator queueCreator,
+                           final RoutingContext context,
+                           final boolean direct,
+                           boolean rejectDuplicates) throws Exception {
+      SendResult result = SendResult.SEND_OK;
       // Sanity check
       if (message.getRefCount() > 0) {
          throw new IllegalStateException("Message cannot be routed more than once");
@@ -619,7 +621,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       applyExpiryDelay(message, address);
 
       if (!checkDuplicateID(message, context, rejectDuplicates, startedTX)) {
-         return;
+         return SendResult.SEND_DUPLICATED_ID;
       }
 
       if (message.hasInternalProperties()) {
@@ -671,6 +673,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
             }
 
             if (dlaAddress == null) {
+               result = SendResult.SEND_NO_DLA;
                ActiveMQServerLogger.LOGGER.noDLA(address);
             }
             else {
@@ -679,9 +682,12 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
                message.setAddress(dlaAddress);
 
                route(message, null, context.getTransaction(), false);
+               result = SendResult.SEND_DLA;
             }
          }
          else {
+            result = SendResult.SEND_NO_BINDINGS;
+
             if (ActiveMQServerLogger.LOGGER.isDebugEnabled()) {
                ActiveMQServerLogger.LOGGER.debug("Message " + message + " is not going anywhere as it didn't have a binding on address:" + address);
             }
@@ -709,6 +715,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       if (startedTX.get()) {
          context.getTransaction().commit();
       }
+      return result;
    }
 
    // HORNETQ-1029
