@@ -52,6 +52,7 @@ import org.apache.activemq.artemis.core.postoffice.Binding;
 import org.apache.activemq.artemis.core.postoffice.BindingType;
 import org.apache.activemq.artemis.core.postoffice.PostOffice;
 import org.apache.activemq.artemis.core.postoffice.QueueBinding;
+import org.apache.activemq.artemis.core.postoffice.RoutingStatus;
 import org.apache.activemq.artemis.core.remoting.CloseListener;
 import org.apache.activemq.artemis.core.remoting.FailureListener;
 import org.apache.activemq.artemis.core.security.CheckType;
@@ -67,7 +68,6 @@ import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.server.QueueCreator;
 import org.apache.activemq.artemis.core.server.QueueQueryResult;
 import org.apache.activemq.artemis.core.server.RoutingContext;
-import org.apache.activemq.artemis.core.server.SendResult;
 import org.apache.activemq.artemis.core.server.ServerConsumer;
 import org.apache.activemq.artemis.core.server.ServerMessage;
 import org.apache.activemq.artemis.core.server.ServerSession;
@@ -1214,13 +1214,13 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
    }
 
    @Override
-   public SendResult send(final ServerMessage message, final boolean direct) throws Exception {
+   public RoutingStatus send(final ServerMessage message, final boolean direct) throws Exception {
       return send(message, direct, false);
    }
 
    @Override
-   public SendResult send(final ServerMessage message, final boolean direct, boolean noAutoCreateQueue) throws Exception {
-      SendResult result = SendResult.SEND_OK;
+   public RoutingStatus send(final ServerMessage message, final boolean direct, boolean noAutoCreateQueue) throws Exception {
+      RoutingStatus result = RoutingStatus.OK;
       //large message may come from StompSession directly, in which
       //case the id header already generated.
       if (!message.isLargeMessage()) {
@@ -1543,8 +1543,8 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
       theTx.rollback();
    }
 
-   protected SendResult doSend(final ServerMessage msg, final boolean direct, final boolean noAutoCreateQueue) throws Exception {
-      SendResult result = SendResult.SEND_OK;
+   protected RoutingStatus doSend(final ServerMessage msg, final boolean direct, final boolean noAutoCreateQueue) throws Exception {
+      RoutingStatus result = RoutingStatus.OK;
       // check the user has write access to this address.
       try {
          securityCheck(msg.getAddress(), CheckType.SEND, this);

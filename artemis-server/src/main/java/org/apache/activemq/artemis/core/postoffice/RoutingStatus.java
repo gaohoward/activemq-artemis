@@ -14,15 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.activemq.artemis.core.server;
+package org.apache.activemq.artemis.core.postoffice;
 
 /**
  * Used to indicate the result of a server send
  */
-public enum SendResult {
-   SEND_OK,
-   SEND_NO_BINDINGS,
-   SEND_DUPLICATED_ID,
-   SEND_NO_DLA,
-   SEND_DLA;
+public enum RoutingStatus {
+   OK,
+   NO_BINDINGS,
+   NO_BINDINGS_DLA,
+   DUPLICATED_ID;
 }

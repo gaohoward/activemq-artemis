@@ -25,13 +25,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.paging.PagingStore;
+import org.apache.activemq.artemis.core.postoffice.RoutingStatus;
 import org.apache.activemq.artemis.core.protocol.openwire.OpenWireConnection;
 import org.apache.activemq.artemis.core.protocol.openwire.OpenWireMessageConverter;
 import org.apache.activemq.artemis.core.protocol.openwire.util.OpenWireUtil;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.MessageReference;
-import org.apache.activemq.artemis.core.server.SendResult;
 import org.apache.activemq.artemis.core.server.ServerConsumer;
 import org.apache.activemq.artemis.core.server.ServerMessage;
 import org.apache.activemq.artemis.core.server.ServerSession;
@@ -363,9 +363,9 @@ public class AMQSession implements SessionCallback {
             connection.getTransportConnection().setAutoRead(false);
          }
 
-         SendResult result = getCoreSession().send(coreMsg, false, actualDestinations[i].isTemporary());
+         RoutingStatus result = getCoreSession().send(coreMsg, false, actualDestinations[i].isTemporary());
 
-         if (result == SendResult.SEND_NO_BINDINGS && actualDestinations[i].isQueue()) {
+         if (result == RoutingStatus.NO_BINDINGS && actualDestinations[i].isQueue()) {
             throw new InvalidDestinationException("Cannot publish to a non-existent Destination: " + actualDestinations[i]);
          }
 
