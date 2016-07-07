@@ -79,6 +79,10 @@ public class ActiveMQConnectionFactory implements Externalizable, Referenceable,
 
    private String protocolManagerFactoryStr;
 
+   private String deserializationBlackList;
+
+   private String deserializationWhiteList;
+
    @Override
    public void writeExternal(ObjectOutput out) throws IOException {
       URI uri = toURI();
@@ -148,6 +152,22 @@ public class ActiveMQConnectionFactory implements Externalizable, Referenceable,
 
          this.protocolManagerFactoryStr = protocolManagerFactoryStr;
       }
+   }
+
+   public String getDeserializationBlackList() {
+      return deserializationBlackList;
+   }
+
+   public void setDeserializationBlackList(String blackList) {
+      this.deserializationBlackList = blackList;
+   }
+
+   public String getDeserializationWhiteList() {
+      return deserializationWhiteList;
+   }
+
+   public void setDeserializationWhiteList(String whiteList) {
+      this.deserializationWhiteList = whiteList;
    }
 
    @Override

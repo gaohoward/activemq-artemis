@@ -693,6 +693,14 @@ public class ActiveMQConnection extends ActiveMQConnectionForContextImpl impleme
       return started;
    }
 
+   public String getDeserializationBlackList() {
+      return this.factoryReference.getDeserializationBlackList();
+   }
+
+   public String getDeserializationWhiteList() {
+      return this.factoryReference.getDeserializationWhiteList();
+   }
+
    // Inner classes --------------------------------------------------------------------------------
 
    private static class JMSFailureListener implements SessionFailureListener {

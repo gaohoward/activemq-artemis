@@ -51,6 +51,7 @@ import org.apache.activemq.artemis.api.jms.ActiveMQJMSClient;
 import org.apache.activemq.artemis.core.client.impl.ClientSessionInternal;
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
 import org.apache.activemq.artemis.jms.client.ActiveMQDestination;
+import org.apache.activemq.artemis.jms.client.ActiveMQObjectMessage;
 import org.apache.activemq.artemis.ra.ActiveMQRABundle;
 import org.apache.activemq.artemis.ra.ActiveMQRALogger;
 import org.apache.activemq.artemis.ra.ActiveMQRaUtils;
@@ -315,6 +316,8 @@ public class ActiveMQActivation {
          try {
             cf = factory.getServerLocator().createSessionFactory();
             session = setupSession(cf);
+            session.addMetaData(ActiveMQObjectMessage.BLACKLIST_KEY, factory.getDeserializationBlackList(), true);
+            session.addMetaData(ActiveMQObjectMessage.WHITELIST_KEY, factory.getDeserializationWhiteList(), true);
             ActiveMQMessageHandler handler = new ActiveMQMessageHandler(this, ra.getTM(), (ClientSessionInternal) session, cf, i);
             handler.setup();
             handlers.add(handler);

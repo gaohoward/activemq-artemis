@@ -107,6 +107,15 @@ public class ActiveMQSession implements QueueSession, TopicSession {
 
       this.session = session;
 
+      try {
+         this.session.addMetaData(ActiveMQObjectMessage.BLACKLIST_KEY, getDeserializationBlackList(), true);
+         this.session.addMetaData(ActiveMQObjectMessage.WHITELIST_KEY, getDeserializationWhiteList(), true);
+      }
+      catch (ActiveMQException e) {
+         //this shouldn't happen
+         throw new IllegalArgumentException("Cannot set metadata on session " + this, e);
+      }
+
       this.sessionType = sessionType;
 
       this.transacted = transacted;
@@ -520,6 +529,14 @@ public class ActiveMQSession implements QueueSession, TopicSession {
          localTopic = new ActiveMQTopic(topic.getTopicName());
       }
       return internalCreateSharedConsumer(localTopic, name, messageSelector, ConsumerDurability.DURABLE);
+   }
+
+   public String getDeserializationBlackList() {
+      return connection.getDeserializationBlackList();
+   }
+
+   public String getDeserializationWhiteList() {
+      return connection.getDeserializationWhiteList();
    }
 
    enum ConsumerDurability {

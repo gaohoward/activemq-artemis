@@ -918,6 +918,11 @@ public final class ClientSessionImpl implements ClientSessionInternal, FailureLi
    }
 
    @Override
+   public void addMetaData(String key, String data) throws ActiveMQException {
+      this.addMetaData(key, data, false);
+   }
+
+   @Override
    public void preHandleFailover(RemotingConnection connection) {
       // We lock the channel to prevent any packets to be added to the re-send
       // cache during the failover process
@@ -1029,17 +1034,26 @@ public final class ClientSessionImpl implements ClientSessionInternal, FailureLi
    }
 
    @Override
-   public void addMetaData(String key, String data) throws ActiveMQException {
+   public void addMetaData(String key, String data, boolean isLocal) throws ActiveMQException {
       synchronized (metadata) {
          metadata.put(key, data);
       }
 
-      sessionContext.addSessionMetadata(key, data);
+      if (!isLocal) {
+         sessionContext.addSessionMetadata(key, data);
+      }
    }
 
    @Override
    public void addUniqueMetaData(String key, String data) throws ActiveMQException {
       sessionContext.addUniqueMetaData(key, data);
+   }
+
+   @Override
+   public String getMetaData(String key) {
+      synchronized (metadata) {
+         return metadata.get(key);
+      }
    }
 
    @Override

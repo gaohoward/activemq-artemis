@@ -202,7 +202,6 @@ public class ActiveMQMessage implements javax.jms.Message {
     */
    protected ActiveMQMessage(final byte type, final ClientSession session) {
       message = session.createMessage(type, true, 0, System.currentTimeMillis(), (byte) 4);
-
    }
 
    protected ActiveMQMessage(final ClientSession session) {
@@ -976,5 +975,11 @@ public class ActiveMQMessage implements javax.jms.Message {
       return result;
    }
 
+   protected String getSessionMetaData(String key) {
+      if (session != null) {
+         return session.getMetaData(key);
+      }
+      return null;
+   }
    // Inner classes -------------------------------------------------
 }

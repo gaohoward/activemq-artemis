@@ -1279,6 +1279,10 @@ public class MessageHeaderTest extends MessageHeaderTestBase {
 
       }
 
+      @Override
+      public void addMetaData(String key, String data, boolean isLocal) throws ActiveMQException {
+      }
+
       /* (non-Javadoc)
        * @see ClientSession#addUniqueMetaData(java.lang.String, java.lang.String)
        */
@@ -1286,6 +1290,11 @@ public class MessageHeaderTest extends MessageHeaderTestBase {
       public void addUniqueMetaData(String key, String data) throws ActiveMQException {
          // TODO Auto-generated method stub
 
+      }
+
+      @Override
+      public String getMetaData(String key) {
+         return null;
       }
 
       @Override

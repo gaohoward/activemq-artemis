@@ -16,12 +16,15 @@
  */
 package org.apache.activemq.artemis.tests.unit.util;
 
+import org.apache.activemq.artemis.tests.unit.util.deserialization.pkg1.TestClass1;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
@@ -33,7 +36,9 @@ import java.net.URLClassLoader;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.StringTokenizer;
 
 import org.junit.Assert;
@@ -47,29 +52,33 @@ public class ObjectInputStreamWithClassLoaderTest extends ActiveMQTestBase {
 
    // Static --------------------------------------------------------
 
-   public static ClassLoader newClassLoader(final Class anyUserClass) throws Exception {
-      ProtectionDomain protectionDomain = anyUserClass.getProtectionDomain();
-      CodeSource codeSource = protectionDomain.getCodeSource();
-      URL classLocation = codeSource.getLocation();
+   public static ClassLoader newClassLoader(final Class... userClasses) throws Exception {
+
+      Set<URL> userClassUrls = new HashSet<>();
+      for (Class anyUserClass : userClasses) {
+         ProtectionDomain protectionDomain = anyUserClass.getProtectionDomain();
+         CodeSource codeSource = protectionDomain.getCodeSource();
+         URL classLocation = codeSource.getLocation();
+         userClassUrls.add(classLocation);
+      }
       StringTokenizer tokenString = new StringTokenizer(System.getProperty("java.class.path"), File.pathSeparator);
       String pathIgnore = System.getProperty("java.home");
       if (pathIgnore == null) {
-         pathIgnore = classLocation.toString();
+         pathIgnore = userClassUrls.iterator().next().toString();
       }
 
       List<URL> urls = new ArrayList<>();
       while (tokenString.hasMoreElements()) {
          String value = tokenString.nextToken();
          URL itemLocation = new File(value).toURI().toURL();
-         if (!itemLocation.equals(classLocation) && itemLocation.toString().indexOf(pathIgnore) >= 0) {
+         if (!userClassUrls.contains(itemLocation) && itemLocation.toString().indexOf(pathIgnore) >= 0) {
             urls.add(itemLocation);
          }
       }
-
       URL[] urlArray = urls.toArray(new URL[urls.size()]);
 
       ClassLoader masterClassLoader = URLClassLoader.newInstance(urlArray, null);
-      ClassLoader appClassLoader = URLClassLoader.newInstance(new URL[]{classLocation}, masterClassLoader);
+      ClassLoader appClassLoader = URLClassLoader.newInstance(userClassUrls.toArray(new URL[0]), masterClassLoader);
       return appClassLoader;
    }
 
@@ -85,7 +94,11 @@ public class ObjectInputStreamWithClassLoaderTest extends ActiveMQTestBase {
          AnObject obj = new AnObjectImpl();
          byte[] bytes = ObjectInputStreamWithClassLoaderTest.toBytes(obj);
 
-         ClassLoader testClassLoader = ObjectInputStreamWithClassLoaderTest.newClassLoader(obj.getClass());
+         //Class.isAnonymousClass() call used in ObjectInputStreamWithClassLoader
+         //need to access the enclosing class and its parent class of the obj
+         //i.e. ActiveMQTestBase and Assert.
+         ClassLoader testClassLoader = ObjectInputStreamWithClassLoaderTest.newClassLoader(
+                 obj.getClass(), ActiveMQTestBase.class, Assert.class);
          Thread.currentThread().setContextClassLoader(testClassLoader);
 
          ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
@@ -113,7 +126,8 @@ public class ObjectInputStreamWithClassLoaderTest extends ActiveMQTestBase {
          originalProxy.setMyInt(100);
          byte[] bytes = ObjectInputStreamWithClassLoaderTest.toBytes(originalProxy);
 
-         ClassLoader testClassLoader = ObjectInputStreamWithClassLoaderTest.newClassLoader(this.getClass());
+         ClassLoader testClassLoader = ObjectInputStreamWithClassLoaderTest.newClassLoader(this.getClass(),
+                 ActiveMQTestBase.class, Assert.class);
          Thread.currentThread().setContextClassLoader(testClassLoader);
          ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
          ObjectInputStreamWithClassLoader ois = new ObjectInputStreamWithClassLoader(bais);
@@ -130,6 +144,138 @@ public class ObjectInputStreamWithClassLoaderTest extends ActiveMQTestBase {
          Thread.currentThread().setContextClassLoader(originalClassLoader);
       }
 
+   }
+
+   @Test
+   public void testWhiteBlackList() throws Exception {
+      File serailizeFile = new File(temporaryFolder.getRoot(), "testclass.bin");
+      ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(serailizeFile));
+      try {
+         outputStream.writeObject(new TestClass1());
+         outputStream.flush();
+      }
+      finally {
+         outputStream.close();
+      }
+
+      //default
+      assertNull(readSerializedObject(null, null, serailizeFile));
+
+      //white list
+      String whiteList = "org.apache.activemq.artemis.tests.unit.util.deserialization";
+      assertNull(readSerializedObject(whiteList, null, serailizeFile));
+      whiteList = "org.apache.activemq.artemis.tests.unit.util.deserialization.pkg1";
+      assertNull(readSerializedObject(whiteList, null, serailizeFile));
+
+      whiteList = "some.other.package";
+      Exception result = readSerializedObject(whiteList, null, serailizeFile);
+      assertTrue(result instanceof ClassNotFoundException);
+
+      //blacklist
+      String blackList = "org.apache.activemq.artemis.tests.unit.util";
+      result = readSerializedObject(null, blackList, serailizeFile);
+      assertTrue(result instanceof ClassNotFoundException);
+
+      blackList = "org.apache.activemq.artemis.tests.unit.util.deserialization.pkg1";
+      result = readSerializedObject(null, blackList, serailizeFile);
+      assertTrue(result instanceof ClassNotFoundException);
+
+      blackList = "org.apache.activemq.artemis.tests.unit.util.deserialization.pkg2";
+      result = readSerializedObject(null, blackList, serailizeFile);
+      assertNull(result);
+
+      blackList = "some.other.package";
+      whiteList = "some.other.package1";
+      result = readSerializedObject(whiteList, blackList, serailizeFile);
+      assertTrue(result instanceof ClassNotFoundException);
+
+      //blacklist priority
+      blackList = "org.apache.activemq.artemis.tests.unit.util.deserialization.pkg1, some.other.package";
+      whiteList = "org.apache.activemq.artemis.tests.unit.util.deserialization.pkg1";
+      result = readSerializedObject(whiteList, blackList, serailizeFile);
+      assertTrue(result instanceof ClassNotFoundException);
+
+      blackList = "org.apache.activemq.artemis.tests.unit, some.other.package";
+      whiteList = "org.apache.activemq.artemis.tests.unit.util.deserialization.pkg1";
+      result = readSerializedObject(whiteList, blackList, serailizeFile);
+      assertTrue(result instanceof ClassNotFoundException);
+
+      blackList = "org.apache.activemq.artemis.tests.unit.util.deserialization.pkg1.pkg2, some.other.package";
+      whiteList = "org.apache.activemq.artemis.tests.unit.util.deserialization.pkg1";
+      result = readSerializedObject(whiteList, blackList, serailizeFile);
+      assertNull(result);
+
+      blackList = "some.other.package, org.apache.activemq.artemis.tests.unit.util.deserialization.pkg2";
+      whiteList = "org.apache.activemq.artemis.tests.unit.util.deserialization.pkg1";
+      result = readSerializedObject(whiteList, blackList, serailizeFile);
+      assertNull(result);
+
+      //wildcard
+      blackList = "*";
+      whiteList = "org.apache.activemq.artemis.tests.unit.util.deserialization.pkg1";
+      result = readSerializedObject(whiteList, blackList, serailizeFile);
+      assertTrue(result instanceof ClassNotFoundException);
+
+      blackList = "*";
+      whiteList = "*";
+      result = readSerializedObject(whiteList, blackList, serailizeFile);
+      assertTrue(result instanceof ClassNotFoundException);
+      result = readSerializedObject(whiteList, null, serailizeFile);
+      assertNull(result);
+   }
+
+   @Test
+   public void testWhiteBlackListSystemProperty() throws Exception {
+
+      File serailizeFile = new File(temporaryFolder.getRoot(), "testclass.bin");
+      ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(serailizeFile));
+      try {
+         outputStream.writeObject(new TestClass1());
+         outputStream.flush();
+      }
+      finally {
+         outputStream.close();
+      }
+
+      System.setProperty(ObjectInputStreamWithClassLoader.BLACKLIST_PROPERTY, "system.defined.black.list");
+      System.setProperty(ObjectInputStreamWithClassLoader.WHITELIST_PROPERTY, "system.defined.white.list");
+      try {
+         ObjectInputStreamWithClassLoader ois = new ObjectInputStreamWithClassLoader(new FileInputStream(serailizeFile));
+         String bList = ois.getBlackList();
+         String wList = ois.getWhiteList();
+         assertEquals("wrong black list: " + bList, "system.defined.black.list", bList);
+         assertEquals("wrong white list: " + wList, "system.defined.white.list", wList);
+         ois.close();
+      }
+      finally {
+         System.clearProperty(ObjectInputStreamWithClassLoader.BLACKLIST_PROPERTY);
+         System.clearProperty(ObjectInputStreamWithClassLoader.WHITELIST_PROPERTY);
+      }
+   }
+
+   private Exception readSerializedObject(String whiteList, String blackList, File serailizeFile) {
+      Exception result = null;
+
+      ObjectInputStreamWithClassLoader ois = null;
+
+      try {
+         ois = new ObjectInputStreamWithClassLoader(new FileInputStream(serailizeFile));
+         ois.setWhiteList(whiteList);
+         ois.setBlackList(blackList);
+         ois.readObject();
+      }
+      catch (Exception e) {
+         result = e;
+      }
+      finally {
+         try {
+            ois.close();
+         }
+         catch (IOException e) {
+            result = e;
+         }
+      }
+      return result;
    }
 
    // Package protected ---------------------------------------------

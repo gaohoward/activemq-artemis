@@ -31,6 +31,7 @@ import org.apache.activemq.artemis.api.core.ActiveMQInterruptedException;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.client.ClientConsumer;
 import org.apache.activemq.artemis.api.core.client.ClientMessage;
+import org.apache.activemq.artemis.api.core.client.ClientSession;
 import org.apache.activemq.artemis.api.core.client.MessageHandler;
 import org.apache.activemq.artemis.api.jms.ActiveMQJMSConstants;
 import org.apache.activemq.artemis.core.client.ActiveMQClientLogger;
@@ -211,8 +212,11 @@ public final class ActiveMQMessageConsumer implements QueueReceiver, TopicSubscr
          ActiveMQMessage jmsMsg = null;
 
          if (coreMessage != null) {
-            boolean needSession = ackMode == Session.CLIENT_ACKNOWLEDGE || ackMode == ActiveMQJMSConstants.INDIVIDUAL_ACKNOWLEDGE;
-            jmsMsg = ActiveMQMessage.createMessage(coreMessage, needSession ? session.getCoreSession() : null);
+            ClientSession coreSession = session.getCoreSession();
+            boolean needSession = ackMode == Session.CLIENT_ACKNOWLEDGE ||
+                                             ackMode == ActiveMQJMSConstants.INDIVIDUAL_ACKNOWLEDGE ||
+                                             coreMessage.getType() == ActiveMQObjectMessage.TYPE;
+            jmsMsg = ActiveMQMessage.createMessage(coreMessage, needSession ? coreSession : null);
 
             try {
                jmsMsg.doBeforeReceive();

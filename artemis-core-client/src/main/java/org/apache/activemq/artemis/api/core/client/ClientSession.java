@@ -691,6 +691,12 @@ public interface ClientSession extends XAResource, AutoCloseable {
    void addMetaData(String key, String data) throws ActiveMQException;
 
    /**
+    * Attach any metadata to the session.
+    * if isLocal is true, don't send it to remote peer
+    * @throws ActiveMQException
+    */
+   void addMetaData(String key, String data, boolean isLocal) throws ActiveMQException;
+   /**
     * Attach any metadata to the session. Throws an exception if there's already a metadata available.
     * You can use this metadata to ensure that there is no other session with the same meta-data you are passing as an argument.
     * This is useful to simulate unique client-ids, where you may want to avoid multiple instances of your client application connected.
@@ -698,6 +704,8 @@ public interface ClientSession extends XAResource, AutoCloseable {
     * @throws ActiveMQException
     */
    void addUniqueMetaData(String key, String data) throws ActiveMQException;
+
+   String getMetaData(String key);
 
    /**
     * Return the sessionFactory used to created this Session.

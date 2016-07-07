@@ -21,7 +21,6 @@ import javax.jms.MessageFormatException;
 import javax.jms.ObjectMessage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
@@ -42,6 +41,8 @@ public class ActiveMQObjectMessage extends ActiveMQMessage implements ObjectMess
    // Constants -----------------------------------------------------
 
    public static final byte TYPE = Message.OBJECT_TYPE;
+   public static final String BLACKLIST_KEY = "deserializationBlackList";
+   public static final String WHITELIST_KEY = "deserializationWhiteList";
 
    // Attributes ----------------------------------------------------
 
@@ -137,7 +138,15 @@ public class ActiveMQObjectMessage extends ActiveMQMessage implements ObjectMess
 
       try {
          ByteArrayInputStream bais = new ByteArrayInputStream(data);
-         ObjectInputStream ois = new ObjectInputStreamWithClassLoader(bais);
+         ObjectInputStreamWithClassLoader ois = new ObjectInputStreamWithClassLoader(bais);
+         String blackList = getDeserializationBlackList();
+         if (blackList != null) {
+            ois.setBlackList(blackList);
+         }
+         String whiteList = getDeserializationWhiteList();
+         if (whiteList != null) {
+            ois.setWhiteList(whiteList);
+         }
          Serializable object = (Serializable) ois.readObject();
          return object;
       }
@@ -175,5 +184,13 @@ public class ActiveMQObjectMessage extends ActiveMQMessage implements ObjectMess
       catch (JMSException e) {
          return false;
       }
+   }
+
+   public String getDeserializationBlackList() {
+      return getSessionMetaData(BLACKLIST_KEY);
+   }
+
+   public String getDeserializationWhiteList() {
+      return getSessionMetaData(WHITELIST_KEY);
    }
 }
