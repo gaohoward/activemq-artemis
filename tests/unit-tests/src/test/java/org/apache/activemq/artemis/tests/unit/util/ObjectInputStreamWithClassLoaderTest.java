@@ -16,9 +16,10 @@
  */
 package org.apache.activemq.artemis.tests.unit.util;
 
+import org.apache.activemq.artemis.tests.unit.util.deserialization.pkg1.EnclosingClass;
 import org.apache.activemq.artemis.tests.unit.util.deserialization.pkg1.TestClass1;
+import org.apache.activemq.artemis.tests.unit.util.deserialization.pkg1.TestClass2;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
-import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -36,14 +37,17 @@ import java.net.URLClassLoader;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 
 import org.junit.Assert;
 
 import org.apache.activemq.artemis.utils.ObjectInputStreamWithClassLoader;
+import org.junit.Test;
 
 public class ObjectInputStreamWithClassLoaderTest extends ActiveMQTestBase {
    // Constants -----------------------------------------------------
@@ -221,6 +225,217 @@ public class ObjectInputStreamWithClassLoaderTest extends ActiveMQTestBase {
       result = readSerializedObject(whiteList, blackList, serailizeFile);
       assertTrue(result instanceof ClassNotFoundException);
       result = readSerializedObject(whiteList, null, serailizeFile);
+      assertNull(result);
+   }
+
+   @Test
+   public void testWhiteBlackListAgainstArrayObject() throws Exception {
+      File serailizeFile = new File(temporaryFolder.getRoot(), "testclass.bin");
+      TestClass1[] sourceObject = new TestClass1[]{new TestClass1()};
+
+      ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(serailizeFile));
+      try {
+         outputStream.writeObject(sourceObject);
+         outputStream.flush();
+      }
+      finally {
+         outputStream.close();
+      }
+
+      //default ok
+      String blackList = null;
+      String whiteList = null;
+
+      Object result = readSerializedObject(whiteList, blackList, serailizeFile);
+      assertNull(result);
+
+      //now blacklist TestClass1
+      blackList = "org.apache.activemq.artemis.tests.unit.util.deserialization.pkg1.TestClass1";
+      whiteList = null;
+
+      result = readSerializedObject(whiteList, blackList, serailizeFile);
+      assertTrue(result instanceof ClassNotFoundException);
+
+      //now whitelist TestClass1, it should pass.
+      blackList = null;
+      whiteList = "org.apache.activemq.artemis.tests.unit.util.deserialization.pkg1.TestClass1";
+
+      result = readSerializedObject(whiteList, blackList, serailizeFile);
+      assertNull(result);
+   }
+
+   @Test
+   public void testWhiteBlackListAgainstListObject() throws Exception {
+      File serailizeFile = new File(temporaryFolder.getRoot(), "testclass.bin");
+      List<TestClass1> sourceObject = new ArrayList<>();
+      sourceObject.add(new TestClass1());
+
+      ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(serailizeFile));
+      try {
+         outputStream.writeObject(sourceObject);
+         outputStream.flush();
+      }
+      finally {
+         outputStream.close();
+      }
+
+      //default ok
+      String blackList = null;
+      String whiteList = null;
+
+      Object result = readSerializedObject(whiteList, blackList, serailizeFile);
+      assertNull(result);
+
+      //now blacklist TestClass1
+      blackList = "org.apache.activemq.artemis.tests.unit.util.deserialization.pkg1.TestClass1";
+      whiteList = null;
+
+      result = readSerializedObject(whiteList, blackList, serailizeFile);
+      assertTrue(result instanceof ClassNotFoundException);
+
+      //now whitelist TestClass1, should fail because the List type is not allowed
+      blackList = null;
+      whiteList = "org.apache.activemq.artemis.tests.unit.util.deserialization.pkg1.TestClass1";
+
+      result = readSerializedObject(whiteList, blackList, serailizeFile);
+      assertTrue(result instanceof ClassNotFoundException);
+
+      //now add List to white list, it should pass
+      blackList = null;
+      whiteList = "org.apache.activemq.artemis.tests.unit.util.deserialization.pkg1.TestClass1," +
+                  "java.util.ArrayList";
+      result = readSerializedObject(whiteList, blackList, serailizeFile);
+      assertNull(result);
+
+   }
+
+   @Test
+   public void testWhiteBlackListAgainstListMapObject() throws Exception {
+      File serailizeFile = new File(temporaryFolder.getRoot(), "testclass.bin");
+      Map<TestClass1, TestClass2> sourceObject = new HashMap<>();
+      sourceObject.put(new TestClass1(), new TestClass2());
+
+      ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(serailizeFile));
+      try {
+         outputStream.writeObject(sourceObject);
+         outputStream.flush();
+      }
+      finally {
+         outputStream.close();
+      }
+
+      String blackList = null;
+      String whiteList = null;
+
+      Object result = readSerializedObject(whiteList, blackList, serailizeFile);
+      assertNull(result);
+
+      //now blacklist the key
+      blackList = "org.apache.activemq.artemis.tests.unit.util.deserialization.pkg1.TestClass1";
+      whiteList = null;
+
+      result = readSerializedObject(whiteList, blackList, serailizeFile);
+      assertTrue(result instanceof ClassNotFoundException);
+
+      //now blacklist the value
+      blackList = "org.apache.activemq.artemis.tests.unit.util.deserialization.pkg1.TestClass2";
+      whiteList = null;
+
+      result = readSerializedObject(whiteList, blackList, serailizeFile);
+      assertTrue(result instanceof ClassNotFoundException);
+
+      //now white list the key, should fail too because value is forbidden
+      blackList = null;
+      whiteList = "org.apache.activemq.artemis.tests.unit.util.deserialization.pkg1.TestClass1";
+
+      result = readSerializedObject(whiteList, blackList, serailizeFile);
+      assertTrue(result instanceof ClassNotFoundException);
+
+      //now white list the value, should fail too because the key is forbidden
+      blackList = null;
+      whiteList = "org.apache.activemq.artemis.tests.unit.util.deserialization.pkg1.TestClass2";
+
+      result = readSerializedObject(whiteList, blackList, serailizeFile);
+      assertTrue(result instanceof ClassNotFoundException);
+
+      //both key and value are in the whitelist, it should fail because HashMap not permitted
+      blackList = null;
+      whiteList = "org.apache.activemq.artemis.tests.unit.util.deserialization.pkg1.TestClass1," +
+                  "org.apache.activemq.artemis.tests.unit.util.deserialization.pkg1.TestClass2";
+
+      result = readSerializedObject(whiteList, blackList, serailizeFile);
+      assertTrue(result instanceof ClassNotFoundException);
+
+      //now add HashMap, test should pass.
+      blackList = null;
+      whiteList = "org.apache.activemq.artemis.tests.unit.util.deserialization.pkg1.TestClass1," +
+              "org.apache.activemq.artemis.tests.unit.util.deserialization.pkg1.TestClass2," +
+              "java.util.HashMap";
+
+      result = readSerializedObject(whiteList, blackList, serailizeFile);
+      assertNull(result);
+
+   }
+
+   @Test
+   public void testWhiteBlackListAnonymousObject() throws Exception {
+      File serailizeFile = new File(temporaryFolder.getRoot(), "testclass.bin");
+      ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(serailizeFile));
+      try {
+         Serializable object = EnclosingClass.anonymousObject;
+         assertTrue(object.getClass().isAnonymousClass());
+         outputStream.writeObject(object);
+         outputStream.flush();
+      }
+      finally {
+         outputStream.close();
+      }
+
+      //default
+      String blackList = null;
+      String whiteList = null;
+      assertNull(readSerializedObject(whiteList, blackList, serailizeFile));
+
+      //forbidden by specifying the enclosing class
+      blackList = "org.apache.activemq.artemis.tests.unit.util.deserialization.pkg1.EnclosingClass";
+      Object result = readSerializedObject(whiteList, blackList, serailizeFile);
+      assertTrue(result instanceof ClassNotFoundException);
+
+      //do it in whiteList
+      blackList = null;
+      whiteList = "org.apache.activemq.artemis.tests.unit.util.deserialization.pkg1.EnclosingClass";
+      result = readSerializedObject(whiteList, blackList, serailizeFile);
+      assertNull(result);
+   }
+
+   @Test
+   public void testWhiteBlackListLocalObject() throws Exception {
+      File serailizeFile = new File(temporaryFolder.getRoot(), "testclass.bin");
+      ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(serailizeFile));
+      try {
+         Object object = EnclosingClass.getLocalObject();
+         assertTrue(object.getClass().isLocalClass());
+         outputStream.writeObject(object);
+         outputStream.flush();
+      }
+      finally {
+         outputStream.close();
+      }
+
+      //default
+      String blackList = null;
+      String whiteList = null;
+      assertNull(readSerializedObject(whiteList, blackList, serailizeFile));
+
+      //forbidden by specifying the enclosing class
+      blackList = "org.apache.activemq.artemis.tests.unit.util.deserialization.pkg1.EnclosingClass";
+      Object result = readSerializedObject(whiteList, blackList, serailizeFile);
+      assertTrue(result instanceof ClassNotFoundException);
+
+      //do it in whiteList
+      blackList = null;
+      whiteList = "org.apache.activemq.artemis.tests.unit.util.deserialization.pkg1.EnclosingClass";
+      result = readSerializedObject(whiteList, blackList, serailizeFile);
       assertNull(result);
    }
 
