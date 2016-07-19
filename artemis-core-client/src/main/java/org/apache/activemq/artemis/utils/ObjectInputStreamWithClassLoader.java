@@ -26,8 +26,6 @@ import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 
 public class ObjectInputStreamWithClassLoader extends ObjectInputStream {
@@ -66,33 +64,14 @@ public class ObjectInputStreamWithClassLoader extends ObjectInputStream {
     * @return the whiteList configured on this policy instance.
     */
    public String getWhiteList() {
-      Iterator<String> entries = whiteList.iterator();
-      StringBuilder builder = new StringBuilder();
-
-      while (entries.hasNext()) {
-         builder.append(entries.next());
-         if (entries.hasNext()) {
-            builder.append(",");
-         }
-      }
-      return builder.toString();
+      return StringUtil.joinStringList(whiteList, ",");
    }
 
    /**
     * @return the blackList configured on this policy instance.
     */
    public String getBlackList() {
-      Iterator<String> entries = blackList.iterator();
-      StringBuilder builder = new StringBuilder();
-
-      while (entries.hasNext()) {
-         builder.append(entries.next());
-         if (entries.hasNext()) {
-            builder.append(",");
-         }
-      }
-
-      return builder.toString();
+      return StringUtil.joinStringList(blackList, ",");
    }
 
    /**
@@ -104,12 +83,7 @@ public class ObjectInputStreamWithClassLoader extends ObjectInputStream {
     * @param whiteList the whiteList that this policy is configured to recognize.
     */
    public void setWhiteList(String whiteList) {
-      ArrayList<String> list = new ArrayList<>();
-      if (whiteList != null && !whiteList.isEmpty()) {
-         list.addAll(Arrays.asList(whiteList.split(",")));
-      }
-
-      this.whiteList = list;
+      this.whiteList = StringUtil.splitStringList(whiteList, ",");
    }
 
    /**
@@ -121,12 +95,7 @@ public class ObjectInputStreamWithClassLoader extends ObjectInputStream {
     * @param blackList the blackList that this policy is configured to recognize.
     */
    public void setBlackList(String blackList) {
-      ArrayList<String> list = new ArrayList<>();
-      if (blackList != null && !blackList.isEmpty()) {
-         list.addAll(Arrays.asList(blackList.split(",")));
-      }
-
-      this.blackList = list;
+      this.blackList = StringUtil.splitStringList(blackList, ",");
    }
 
    // Package protected ----------------------------------------------------------------------------
