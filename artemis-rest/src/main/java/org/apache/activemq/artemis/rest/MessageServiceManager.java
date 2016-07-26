@@ -32,6 +32,7 @@ import org.apache.activemq.artemis.api.core.client.ServerLocator;
 import org.apache.activemq.artemis.core.client.impl.ServerLocatorImpl;
 import org.apache.activemq.artemis.core.remoting.impl.invm.InVMConnectorFactory;
 import org.apache.activemq.artemis.core.remoting.impl.invm.TransportConstants;
+import org.apache.activemq.artemis.jms.client.ConnectionFactoryOptions;
 import org.apache.activemq.artemis.rest.queue.DestinationSettings;
 import org.apache.activemq.artemis.rest.queue.QueueServiceManager;
 import org.apache.activemq.artemis.rest.topic.TopicServiceManager;
@@ -46,14 +47,21 @@ import org.apache.activemq.artemis.utils.XMLUtil;
 public class MessageServiceManager {
 
    protected ExecutorService threadPool;
-   protected QueueServiceManager queueManager = new QueueServiceManager();
-   protected TopicServiceManager topicManager = new TopicServiceManager();
+   protected QueueServiceManager queueManager;
+   protected TopicServiceManager topicManager;
    protected TimeoutTask timeoutTask;
    protected int timeoutTaskInterval = 1;
    protected MessageServiceConfiguration configuration = new MessageServiceConfiguration();
    protected boolean configSet = false;
    protected String configResourcePath;
    protected BindingRegistry registry;
+
+   private ConnectionFactoryOptions jmsOptions;
+
+   public MessageServiceManager(ConnectionFactoryOptions jmsOptions) {
+      queueManager = new QueueServiceManager(jmsOptions);
+      topicManager = new TopicServiceManager(jmsOptions);
+   }
 
    public BindingRegistry getRegistry() {
       return registry;
