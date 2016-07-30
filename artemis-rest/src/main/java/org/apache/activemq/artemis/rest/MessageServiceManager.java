@@ -23,6 +23,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import javax.xml.bind.JAXBContext;
 
@@ -57,6 +58,7 @@ public class MessageServiceManager {
    protected BindingRegistry registry;
 
    private ConnectionFactoryOptions jmsOptions;
+   private ClientSessionFactory consumerSessionFactory;
 
    public MessageServiceManager(ConnectionFactoryOptions jmsOptions) {
       queueManager = new QueueServiceManager(jmsOptions);
@@ -155,7 +157,7 @@ public class MessageServiceManager {
          consumerLocator.setConsumerWindowSize(configuration.getConsumerWindowSize());
       }
 
-      ClientSessionFactory consumerSessionFactory = consumerLocator.createSessionFactory();
+      consumerSessionFactory = consumerLocator.createSessionFactory();
       ActiveMQRestLogger.LOGGER.debug("Created ClientSessionFactory: " + consumerSessionFactory);
 
       ServerLocator defaultLocator = new ServerLocatorImpl(false, new TransportConfiguration(InVMConnectorFactory.class.getName(), transportConfig));
@@ -205,5 +207,13 @@ public class MessageServiceManager {
       if (topicManager != null)
          topicManager.stop();
       topicManager = null;
+      this.timeoutTask.stop();
+      threadPool.shutdown();
+      try {
+         threadPool.awaitTermination(5000, TimeUnit.SECONDS);
+      }
+      catch (InterruptedException e) {
+      }
+      this.consumerSessionFactory.close();
    }
 }
