@@ -41,6 +41,8 @@ import java.io.StringReader;
 
 public class RestDeserializationTest extends RestTestBase {
 
+   private RestAMQConnection restConnection;
+
    @Before
    public void setUp() throws Exception {
       super.setUp();
@@ -49,17 +51,22 @@ public class RestDeserializationTest extends RestTestBase {
 
    @After
    public void tearDown() throws Exception {
+      if (restConnection != null) {
+         restConnection.close();
+      }
       super.tearDown();
    }
 
    @Test
-   public void testWithoutBlackWhiteList() throws Exception {
+   public void testWithoutBlackWhiteListQueue() throws Exception {
       jmsServer.createQueue(false, "orders", null, true, (String[]) null);
       File warFile = getResourceFile("/rest/rest-test.war", "rest-test.war");
       deployWebApp("/restapp", warFile);
       server.start();
       String uri = server.getURI().toASCIIString();
       System.out.println("Sever started with uri: " + uri);
+
+      restConnection = new RestAMQConnection(uri);
 
       Order order = new Order();
       order.setName("Bill");
@@ -68,36 +75,109 @@ public class RestDeserializationTest extends RestTestBase {
 
       jmsSendMessage(order, "orders", true);
 
-      String received = restReceiveMessage(uri, "orders", true);
+      String received = restReceiveQueueMessage("orders");
       
       Object object = xmlToObject(received);
 
       assertEquals(order, object);
    }
 
-   public Object xmlToObject(String xmlString) throws JAXBException {
+   @Test
+   public void testWithoutBlackWhiteListTopic() throws Exception {
+      jmsServer.createTopic(false, "ordersTopic", (String[]) null);
+      File warFile = getResourceFile("/rest/rest-test.war", "rest-test.war");
+      deployWebApp("/restapp", warFile);
+      server.start();
+      String uri = server.getURI().toASCIIString();
+      System.out.println("Sever started with uri: " + uri);
+
+      restConnection = new RestAMQConnection(uri);
+
+      RestMessageContext topicContext = restConnection.createTopicContext("ordersTopic");
+      topicContext.initPullConsumers();
+
+      Order order = new Order();
+      order.setName("Bill");
+      order.setItem("iPhone4");
+      order.setAmount("$199.99");
+
+      jmsSendMessage(order, "ordersTopic", false);
+
+      String received = topicContext.pullMessage();
+
+      Object object = xmlToObject(received);
+
+      assertEquals(order, object);
+   }
+
+   @Test
+   public void testBlackWhiteListQueuePull() throws Exception {
+      jmsServer.createQueue(false, "orders", null, true, (String[]) null);
+      File warFile = getResourceFile("/rest/rest-test-bwlist.war", "rest-test-bwlist.war");
+      deployWebApp("/restapp", warFile);
+      server.start();
+      String uri = server.getURI().toASCIIString();
+      System.out.println("Sever started with uri: " + uri);
+
+      restConnection = new RestAMQConnection(uri);
+      Order order = new Order();
+      order.setName("Bill");
+      order.setItem("iPhone4");
+      order.setAmount("$199.99");
+
+      jmsSendMessage(order, "orders", true);
+
+      try {
+         String received = restReceiveQueueMessage("orders");
+         fail("Object should be rejected by blacklist, but " + received);
+      }
+      catch (IllegalStateException e) {
+         String error = e.getMessage();
+         assertTrue(error, error.contains("ClassNotFoundException"));
+      }
+   }
+
+   @Test
+   public void testWithoutBlackWhiteListTopicPull() throws Exception {
+      jmsServer.createTopic(false, "ordersTopic", (String[]) null);
+      File warFile = getResourceFile("/rest/rest-test-bwlist.war", "rest-test-bwlist.war");
+      deployWebApp("/restapp", warFile);
+      server.start();
+      String uri = server.getURI().toASCIIString();
+      System.out.println("Sever started with uri: " + uri);
+
+      restConnection = new RestAMQConnection(uri);
+      RestMessageContext topicContext = restConnection.createTopicContext("ordersTopic");
+      topicContext.initPullConsumers();
+
+      Order order = new Order();
+      order.setName("Bill");
+      order.setItem("iPhone4");
+      order.setAmount("$199.99");
+
+      jmsSendMessage(order, "ordersTopic", false);
+
+      try {
+         String received = topicContext.pullMessage();
+         fail("object should have been rejected but: " + received);
+      }
+      catch (IllegalStateException e) {
+         String error = e.getMessage();
+         assertTrue(error, error.contains("ClassNotFoundException"));
+      }
+   }
+
+   private Object xmlToObject(String xmlString) throws JAXBException {
       JAXBContext jc = JAXBContext.newInstance(Order.class);
       Unmarshaller unmarshaller = jc.createUnmarshaller();
       StringReader reader = new StringReader(xmlString);
       return unmarshaller.unmarshal(reader);
    }
 
-   private String restReceiveMessage(String uri, String destName, boolean isQueue) throws Exception {
-      RestAMQConnection restConnection = new RestAMQConnection(uri);
-      try {
-         RestMessageContext restContext;
-         if (isQueue) {
-            restContext = restConnection.createQueueContext(destName);
-         }
-         else {
-            restContext = restConnection.createTopicContext(destName);
-         }
-         String val = restContext.pullMessage();
-         return val;
-      }
-      finally {
-         restConnection.close();
-      }
+   private String restReceiveQueueMessage(String destName) throws Exception {
+      RestMessageContext restContext = restConnection.createQueueContext(destName);
+      String val = restContext.pullMessage();
+      return val;
    }
 
    private void jmsSendMessage(Serializable value, String destName, boolean isQueue) throws JMSException {

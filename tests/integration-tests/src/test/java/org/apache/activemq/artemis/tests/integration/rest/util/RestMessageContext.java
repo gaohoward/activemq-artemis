@@ -137,7 +137,7 @@ public abstract class RestMessageContext implements Closeable {
       return code;
    }
 
-   protected abstract void initPullConsumers() throws IOException;
+   public abstract void initPullConsumers() throws IOException;
 
    public boolean acknowledgement(boolean ackValue) throws IOException {
       String ackUri = contextMap.get(KEY_MSG_ACK);
@@ -200,6 +200,13 @@ public abstract class RestMessageContext implements Closeable {
             }
          }
          else if (code == 503) {
+            if (autoAck) {
+               contextMap.put(KEY_MSG_CONSUME_NEXT, response.getFirstHeader(KEY_MSG_CONSUME_NEXT).getValue());
+            }
+            else {
+               contextMap.put(KEY_MSG_ACK_NEXT, response.getFirstHeader(KEY_MSG_ACK_NEXT).getValue());
+            }
+
             Header header = response.getFirstHeader("Retry-After");
             if (header != null) {
                long retryDelay = Long.valueOf(response.getFirstHeader("Retry-After").getValue());
@@ -209,17 +216,11 @@ public abstract class RestMessageContext implements Closeable {
                catch (InterruptedException e) {
                   e.printStackTrace();
                }
+               message = pullMessage();
             }
-            if (autoAck) {
-               contextMap.put(KEY_MSG_CONSUME_NEXT, response.getFirstHeader(KEY_MSG_CONSUME_NEXT).getValue());
-            }
-            else {
-               contextMap.put(KEY_MSG_ACK_NEXT, response.getFirstHeader(KEY_MSG_ACK_NEXT).getValue());
-            }
-            message = pullMessage();
          }
          else {
-            System.err.println("error: " + ResponseUtil.getDetails(response));
+            throw new IllegalStateException("error: " + ResponseUtil.getDetails(response));
          }
       }
       finally {

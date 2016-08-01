@@ -27,8 +27,9 @@ public class TopicRestMessageContext extends RestMessageContext {
 
    private boolean durableSub;
 
-   public TopicRestMessageContext(RestAMQConnection restAMQConnection, String topic) throws ClientProtocolException, IOException {
+   public TopicRestMessageContext(RestAMQConnection restAMQConnection, String topic, boolean durable) throws IOException {
       super(restAMQConnection, topic);
+      this.durableSub = durable;
    }
 
    @Override
@@ -42,7 +43,7 @@ public class TopicRestMessageContext extends RestMessageContext {
    }
 
    @Override
-   protected void initPullConsumers() throws ClientProtocolException, IOException {
+   public void initPullConsumers() throws IOException {
       String pullUri = getPullConsumerUri();
       CloseableHttpResponse response = null;
       if (this.durableSub || !this.autoAck) {
@@ -65,6 +66,9 @@ public class TopicRestMessageContext extends RestMessageContext {
             if (header != null) {
                contextMap.put(KEY_MSG_ACK_NEXT, header.getValue());
             }
+         }
+         else {
+            throw new IllegalStateException("Failed to init pull consumer " + ResponseUtil.getDetails(response));
          }
       }
       finally {

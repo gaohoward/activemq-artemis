@@ -47,7 +47,7 @@ public class RestAMQConnection implements Closeable {
    }
 
    public TopicRestMessageContext createTopicContext(String topic) throws Exception {
-      TopicRestMessageContext ctx = new TopicRestMessageContext(this, topic);
+      TopicRestMessageContext ctx = new TopicRestMessageContext(this, topic, false);
       contexts.add(ctx);
       return ctx;
    }

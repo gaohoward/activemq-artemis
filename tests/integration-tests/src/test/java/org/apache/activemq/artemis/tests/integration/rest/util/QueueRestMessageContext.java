@@ -39,7 +39,7 @@ public class QueueRestMessageContext extends RestMessageContext {
    }
 
    @Override
-   protected void initPullConsumers() throws IOException {
+   public void initPullConsumers() throws IOException {
       String pullUri = getPullConsumerUri();
       CloseableHttpResponse response = null;
       if (!this.autoAck) {

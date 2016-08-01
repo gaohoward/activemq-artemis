@@ -188,7 +188,9 @@ public class QueueConsumer {
          return response;
       }
       catch (Exception e) {
-         throw new RuntimeException(e);
+         Response errorResponse = Response.serverError().entity(e.getMessage())
+                 .status(Response.Status.INTERNAL_SERVER_ERROR).build();
+         return errorResponse;
       }
    }
 

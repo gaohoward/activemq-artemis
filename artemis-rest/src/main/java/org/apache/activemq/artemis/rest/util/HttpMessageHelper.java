@@ -75,14 +75,18 @@ public class HttpMessageHelper {
             try {
                ObjectInputStreamWithClassLoader ois = new ObjectInputStreamWithClassLoader(bais);
                if (jmsOptions != null) {
+                  System.out.println("push----------------------------------- processing bwlist");
                   ois.setBlackList(jmsOptions.getDeserializationBlackList());
                   ois.setWhiteList(jmsOptions.getDeserializationWhiteList());
                }
                obj = ois.readObject();
+               System.out.println("push-------------------------- ok read obj");
                ActiveMQRestLogger.LOGGER.debug("**** Building Message from object: " + obj.toString());
                request.body(contentType, obj);
             }
             catch (Exception e) {
+               System.err.println("push---------------------- got exception " + e);
+               e.printStackTrace();
                throw new RuntimeException(e);
             }
          }

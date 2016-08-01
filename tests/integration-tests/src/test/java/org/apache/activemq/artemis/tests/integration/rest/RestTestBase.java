@@ -19,11 +19,9 @@ package org.apache.activemq.artemis.tests.integration.rest;
 import org.apache.activemq.artemis.tests.util.JMSTestBase;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.handler.DefaultHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.junit.After;
-import org.junit.Assert;
 import org.eclipse.jetty.server.ServerConnector;
 import org.junit.Before;
 import org.junit.Rule;
@@ -31,11 +29,8 @@ import org.junit.rules.TemporaryFolder;
 import shaded.org.apache.commons.io.FileUtils;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
-
 
 public class RestTestBase extends JMSTestBase {
 
