@@ -42,6 +42,11 @@ import org.apache.activemq.artemis.cli.commands.tools.HelpData;
 import org.apache.activemq.artemis.cli.commands.tools.PrintData;
 import org.apache.activemq.artemis.cli.commands.tools.XmlDataExporter;
 import org.apache.activemq.artemis.cli.commands.tools.XmlDataImporter;
+import org.apache.activemq.artemis.cli.commands.user.AddUser;
+import org.apache.activemq.artemis.cli.commands.user.HelpUser;
+import org.apache.activemq.artemis.cli.commands.user.ListUser;
+import org.apache.activemq.artemis.cli.commands.user.RemoveUser;
+import org.apache.activemq.artemis.cli.commands.user.ResetUser;
 
 /**
  * Artemis is the main CLI entry point for managing/running a broker.
@@ -128,6 +133,8 @@ public class Artemis {
       if (instance != null) {
          builder.withGroup("data").withDescription("data tools group (print|exp|imp|exp|encode|decode|compact) (example ./artemis data print)").
             withDefaultCommand(HelpData.class).withCommands(PrintData.class, XmlDataExporter.class, XmlDataImporter.class, DecodeJournal.class, EncodeJournal.class, CompactJournal.class);
+         builder.withGroup("user").withDescription("default file-based user management (add|rm|list|reset) (example ./artemis user list)").
+                 withDefaultCommand(HelpUser.class).withCommands(ListUser.class, AddUser.class, RemoveUser.class, ResetUser.class);
          builder = builder.withCommands(Run.class, Stop.class, Kill.class);
       } else {
          builder.withGroup("data").withDescription("data tools group (print) (example ./artemis data print)").
