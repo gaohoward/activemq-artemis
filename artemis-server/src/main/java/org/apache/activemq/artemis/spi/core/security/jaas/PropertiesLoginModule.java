@@ -33,7 +33,7 @@ import java.util.Properties;
 import java.util.Set;
 
 import org.apache.activemq.artemis.utils.HashProcessor;
-import org.apache.activemq.artemis.utils.HashProcessorFactory;
+import org.apache.activemq.artemis.utils.PasswordMaskingUtil;
 import org.jboss.logging.Logger;
 
 public class PropertiesLoginModule extends PropertiesLoader implements LoginModule {
@@ -96,7 +96,7 @@ public class PropertiesLoginModule extends PropertiesLoader implements LoginModu
 
       //password is hashed
       try {
-         hashProcessor = HashProcessorFactory.getHashProcessor(password);
+         hashProcessor = PasswordMaskingUtil.getHashProcessor(password);
 
          if (!hashProcessor.compare(tmpPassword, password)) {
             throw new FailedLoginException("Password does not match");

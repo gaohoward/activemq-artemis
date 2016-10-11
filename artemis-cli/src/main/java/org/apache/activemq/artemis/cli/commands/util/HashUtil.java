@@ -18,11 +18,11 @@ package org.apache.activemq.artemis.cli.commands.util;
 
 import org.apache.activemq.artemis.cli.commands.ActionContext;
 import org.apache.activemq.artemis.utils.HashProcessor;
-import org.apache.activemq.artemis.utils.HashProcessorFactory;
+import org.apache.activemq.artemis.utils.PasswordMaskingUtil;
 
 public class HashUtil {
 
-   private static final HashProcessor HASH_PROCESSOR = HashProcessorFactory.getHashProcessor();
+   private static final HashProcessor HASH_PROCESSOR = PasswordMaskingUtil.getHashProcessor();
 
    //calculate the hash for plaintext.
    //any exception will cause plaintext returned unchanged.

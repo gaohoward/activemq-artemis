@@ -49,7 +49,7 @@ import org.apache.activemq.artemis.jlibaio.LibaioContext;
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
 import org.apache.activemq.artemis.jms.client.ActiveMQDestination;
 import org.apache.activemq.artemis.utils.HashProcessor;
-import org.apache.activemq.artemis.utils.HashProcessorFactory;
+import org.apache.activemq.artemis.utils.PasswordMaskingUtil;
 import org.apache.activemq.artemis.utils.StringUtil;
 import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
@@ -591,7 +591,7 @@ public class ArtemisTest {
       FileBasedConfigurationBuilder<PropertiesConfiguration> userBuilder = configs.propertiesBuilder(userFile);
       PropertiesConfiguration userConfig = userBuilder.getConfiguration();
       String storedPassword = (String) userConfig.getProperty(user);
-      HashProcessor processor = HashProcessorFactory.getHashProcessor(storedPassword);
+      HashProcessor processor = PasswordMaskingUtil.getHashProcessor(storedPassword);
       return processor.compare(password.toCharArray(), storedPassword);
    }
 

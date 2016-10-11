@@ -17,6 +17,7 @@
 package org.apache.activemq.artemis.utils;
 
 import java.security.AccessController;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,6 +27,68 @@ import org.apache.activemq.artemis.api.core.ActiveMQExceptionType;
 import org.apache.activemq.artemis.logs.ActiveMQUtilBundle;
 
 public class PasswordMaskingUtil {
+
+   private static final String PLAINTEXT_PROCESSOR = "plaintext";
+   private static final String SECURE_PROCESSOR = "secure";
+
+   private static final Map<String, HashProcessor> processors = new HashMap<>();
+
+   //stored password takes 2 forms, ENC() or plain text
+   public static HashProcessor getHashProcessor(String storedPassword) throws Exception {
+
+      if (!isEncoded(storedPassword)) {
+         return getPlaintextProcessor();
+      }
+
+      return getSecureProcessor();
+   }
+
+   private static boolean isEncoded(String storedPassword) {
+      if (storedPassword == null) {
+         return true;
+      }
+
+      if (storedPassword.startsWith("ENC(") && storedPassword.endsWith(")")) {
+         return true;
+      }
+      return false;
+   }
+
+   public static HashProcessor getHashProcessor() {
+      HashProcessor processor = null;
+      try {
+         processor = getSecureProcessor();
+      } catch (Exception e) {
+         processor = getPlaintextProcessor();
+      }
+      return processor;
+   }
+
+   public static HashProcessor getPlaintextProcessor() {
+      synchronized (processors) {
+         HashProcessor plain = processors.get(PLAINTEXT_PROCESSOR);
+         if (plain == null) {
+            plain = new NoHashProcessor();
+            processors.put(PLAINTEXT_PROCESSOR, plain);
+         }
+         return plain;
+      }
+   }
+
+   public static HashProcessor getSecureProcessor() throws Exception {
+      synchronized (processors) {
+         HashProcessor processor = processors.get(SECURE_PROCESSOR);
+         if (processor == null) {
+            try {
+               processor = new PBKDF2HashProcessor();
+               processors.put(SECURE_PROCESSOR, processor);
+            } catch (NoSuchAlgorithmException e) {
+               throw new IllegalStateException("Failed to get hash processor!", e);
+            }
+         }
+         return processor;
+      }
+   }
 
    /*
     * Loading the codec class.
@@ -79,4 +142,6 @@ public class PasswordMaskingUtil {
    public static SensitiveDataCodec<String> getDefaultCodec() {
       return new DefaultSensitiveStringCodec();
    }
+
+
 }

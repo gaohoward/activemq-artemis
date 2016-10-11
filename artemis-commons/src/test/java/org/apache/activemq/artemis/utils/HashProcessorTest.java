@@ -26,7 +26,7 @@ import java.util.Collection;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
-public class HashProcessorFactoryTest {
+public class HashProcessorTest {
 
    private static final String USER1_PASSWORD = "password";
    private static final String USER1_HASHED_PASSWORD = "ENC(1024:973A466A489ABFDED3D4B3D181DC77F410F2FC6E87432809A46B72B294147D76:C999ECA8A85387E1FFB14E4FE5CECD17948BA80BA04318A9BE4C3E34B7FE2925F43AB6BC9DFE0D9855DA67439AEEB9850351BC4D5D3AEC6A6903C42B8EB4ED1E)";
@@ -51,7 +51,7 @@ public class HashProcessorFactoryTest {
    private String storedPassword;
    private boolean match;
 
-   public HashProcessorFactoryTest(String password, String storedPassword, boolean match) {
+   public HashProcessorTest(String password, String storedPassword, boolean match) {
       this.password = password;
       this.storedPassword = storedPassword;
       this.match = match;
@@ -59,7 +59,7 @@ public class HashProcessorFactoryTest {
 
    @Test
    public void testPasswordVerification() throws Exception {
-      HashProcessor processor = HashProcessorFactory.getHashProcessor(storedPassword);
+      HashProcessor processor = PasswordMaskingUtil.getHashProcessor(storedPassword);
       boolean result = processor.compare(password.toCharArray(), storedPassword);
       assertEquals(match, result);
    }
