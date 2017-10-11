@@ -348,6 +348,13 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
 
    @Override
    public HandleStatus handle(final MessageReference ref) throws Exception {
+      return handle(ref, false);
+   }
+
+   public HandleStatus handle(final MessageReference ref, boolean expectBusy) throws Exception {
+      if (expectBusy) {
+         return HandleStatus.BUSY;
+      }
       if (callback != null && !callback.hasCredits(this) || availableCredits != null && availableCredits.get() <= 0) {
          if (logger.isDebugEnabled()) {
             logger.debug(this + " is busy for the lack of credits. Current credits = " +

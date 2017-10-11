@@ -104,6 +104,9 @@ import org.jboss.logging.Logger;
  */
 public class QueueImpl extends CriticalComponentImpl implements Queue {
 
+   public static CountDownLatch closeConsumer3Latch = new CountDownLatch(1);
+   public static CountDownLatch consumer3CloasedLatch = new CountDownLatch(1);
+
    protected static final int CRITICAL_PATHS = 4;
    protected static final int CRITICAL_PATH_ADD_TAIL = 0;
    protected static final int CRITICAL_PATH_ADD_HEAD = 1;
@@ -881,11 +884,13 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
                   break;
                }
             }
+            System.out.println("--pos: " + pos + " size " + consumerList.size());
 
             this.supportsDirectDeliver = checkConsumerDirectDeliver();
 
             if (pos > 0 && pos >= consumerList.size()) {
                pos = consumerList.size() - 1;
+               System.out.println("POs: " + pos);
             }
 
             if (consumerSet.remove(consumer)) {
@@ -2073,6 +2078,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
     * are no more matching or available messages.
     */
    private void deliver() {
+      System.out.println("______deliver: " + pos);
       if (logger.isDebugEnabled()) {
          logger.debug(this + " doing deliver. messageReferences=" + messageReferences.size());
       }
@@ -2090,8 +2096,20 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
 
       long timeout = System.currentTimeMillis() + DELIVERY_TIMEOUT;
 
+      int nit = 0;
       while (true) {
-         if (handled == MAX_DELIVERIES_IN_LOOP) {
+         nit++;
+         if (nit == 2) {
+            closeConsumer3Latch.countDown();
+            try {
+               consumer3CloasedLatch.await();
+            } catch (InterruptedException e) {
+               e.printStackTrace();
+            }
+            System.out.println("Now consumer 3 should have been closed");
+         }
+
+            if (handled == MAX_DELIVERIES_IN_LOOP) {
             // Schedule another one - we do this to prevent a single thread getting caught up in this loop for too
             // long
 
@@ -2137,6 +2155,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
                   noDelivery = 0;
                }
             }
+            System.out.println("iter: " + nit + " pos: " + pos + " endPos: " + endPos + " size: " + size + " noDel: " + noDelivery);
 
             ConsumerHolder holder = consumerList.get(pos);
 
@@ -2184,7 +2203,9 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
                   }
                }
 
-               HandleStatus status = handle(ref, consumer);
+               boolean expectBusy = nit < 3;
+               HandleStatus status = handle(ref, consumer, expectBusy);
+               System.out.println("handled status: " + status);
 
                if (status == HandleStatus.HANDLED) {
 
@@ -2243,6 +2264,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
          if (handledconsumer != null) {
             proceedDeliver(handledconsumer, ref);
          }
+         System.out.println("end of iter " + nit + " pos: " + pos + " endPos: " + endPos + " size: " + size + " noDel: " + noDelivery);
       }
 
       checkDepage();
@@ -2727,7 +2749,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
                pos = 0;
             }
 
-            HandleStatus status = handle(ref, consumer);
+            HandleStatus status = handle(ref, consumer, false);
 
             if (status == HandleStatus.HANDLED) {
                if (groupID != null && groupConsumer == null) {
@@ -2796,10 +2818,10 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       }
    }
 
-   private synchronized HandleStatus handle(final MessageReference reference, final Consumer consumer) {
+   private synchronized HandleStatus handle(final MessageReference reference, final Consumer consumer, boolean expectBusy) {
       HandleStatus status;
       try {
-         status = consumer.handle(reference);
+         status = ((ServerConsumerImpl)consumer).handle(reference, expectBusy);
       } catch (Throwable t) {
          ActiveMQServerLogger.LOGGER.removingBadConsumer(t, consumer, reference);
 
