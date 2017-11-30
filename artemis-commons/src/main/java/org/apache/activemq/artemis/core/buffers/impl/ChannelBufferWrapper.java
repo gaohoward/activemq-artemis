@@ -90,7 +90,7 @@ public class ChannelBufferWrapper implements ActiveMQBuffer {
    private SimpleString readSimpleStringInternal() {
       int len = buffer.readInt();
       if (len > buffer.readableBytes()) {
-         throw new IndexOutOfBoundsException();
+         throw new IndexOutOfBoundsException("len: " + len + " readable: " + buffer.readableBytes());
       }
       byte[] data = new byte[len];
       buffer.readBytes(data);
