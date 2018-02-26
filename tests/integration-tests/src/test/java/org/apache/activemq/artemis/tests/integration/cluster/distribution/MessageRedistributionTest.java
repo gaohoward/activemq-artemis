@@ -78,6 +78,72 @@ public class MessageRedistributionTest extends ClusterTestBase {
 
    }
 
+   @Test
+   public void testRedistributionOnLateConsumersWithMessageGroups() throws Exception {
+      setupCluster(MessageLoadBalancingType.ON_DEMAND);
+
+      MessageRedistributionTest.log.info("Doing test");
+
+      getServer(0).getConfiguration().setGroupingHandlerConfiguration(new GroupingHandlerConfiguration().setName(new SimpleString("handler")).setType(GroupingHandlerConfiguration.TYPE.LOCAL).setAddress(new SimpleString("queues")));
+      getServer(1).getConfiguration().setGroupingHandlerConfiguration(new GroupingHandlerConfiguration().setName(new SimpleString("handler")).setType(GroupingHandlerConfiguration.TYPE.REMOTE).setAddress(new SimpleString("queues")));
+
+      startServers(0, 1);
+
+      setupSessionFactory(0, isNetty());
+      setupSessionFactory(1, isNetty());
+
+      this.createQueue(0, "queues.testaddress", "queue0", null, false);
+      createQueue(1, "queues.testaddress", "queue0", null, false);
+
+      waitForBindings(0, "queues.testaddress", 1, 0, true);
+      waitForBindings(1, "queues.testaddress", 1, 0, true);
+
+      waitForBindings(0, "queues.testaddress", 1, 0, false);
+      waitForBindings(1, "queues.testaddress", 1, 0, false);
+
+      //send some grouped messages before we add the consumer to node 0 so we guarantee its pinned to node 1
+      sendWithProperty(0, "queues.testaddress", 10, false, Message.HDR_GROUP_ID, new SimpleString("grp1"));
+
+      addConsumer(1, 1, "queue0", null);
+      waitForBindings(0, "queues.testaddress", 1, 0, true);
+      waitForBindings(1, "queues.testaddress", 1, 1, true);
+
+      waitForBindings(0, "queues.testaddress", 1, 1, false);
+      waitForBindings(1, "queues.testaddress", 1, 0, false);
+
+      addConsumer(0, 0, "queue0", null);
+
+      waitForBindings(0, "queues.testaddress", 1, 1, true);
+      waitForBindings(1, "queues.testaddress", 1, 1, true);
+
+      waitForBindings(0, "queues.testaddress", 1, 1, false);
+      waitForBindings(1, "queues.testaddress", 1, 1, false);
+
+      //consume half of the grouped messages from node 1
+      boolean chosen = false;
+      ClientConsumer grpConsumer = getConsumer(0);
+      ClientMessage message = null;
+      for (int i = 0; i < 10; i++) {
+         if (!chosen) {
+            message = grpConsumer.receive(2000);
+            if (message == null) {
+               grpConsumer = getConsumer(1);
+               message = grpConsumer.receive(2000);
+               assertNotNull(message);
+            } else {
+               assertNull(getConsumer(1).receive(1000));
+            }
+            chosen = true;
+         } else {
+            message = grpConsumer.receive(2000);
+            assertNotNull(message);
+         }
+         message.acknowledge();
+         System.out.println("-------receive grp mesage: " + message);
+         Assert.assertNotNull(message.getSimpleStringProperty(Message.HDR_GROUP_ID));
+      }
+      MessageRedistributionTest.log.info("Test done");
+   }
 
    //https://issues.jboss.org/browse/HORNETQ-1061
    @Test
@@ -94,9 +160,7 @@ public class MessageRedistributionTest extends ClusterTestBase {
       setupSessionFactory(0, isNetty());
       setupSessionFactory(1, isNetty());
 
-      this.
-
-         createQueue(0, "queues.testaddress", "queue0", null, false);
+      this.createQueue(0, "queues.testaddress", "queue0", null, false);
       createQueue(1, "queues.testaddress", "queue0", null, false);
 
       addConsumer(1, 1, "queue0", null);
