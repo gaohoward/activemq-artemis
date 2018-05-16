@@ -72,6 +72,8 @@
    </prerequisites>
 
    <properties>
+      <!-- See: https://github.com/trustin/os-maven-plugin -->
+      <os.detection.classifierWithLikes>fedora</os.detection.classifierWithLikes>
        <!-- base url for site deployment.  See distribution management for full url.  Override this in settings.xml for staging -->
       <staging.siteURL>scp://people.apache.org/x1/www/activemq.apache.org</staging.siteURL>
 
@@ -92,6 +94,7 @@
       <maven.assembly.plugin.version>2.4</maven.assembly.plugin.version>
       <mockito.version>2.8.47</mockito.version>
       <netty.version>4.1.24.Final</netty.version>
+      <netty.tcnative.version>2.0.8.Final</netty.tcnative.version>
       <proton.version>0.27.1</proton.version>
       <resteasy.version>3.0.19.Final</resteasy.version>
       <slf4j.version>1.7.21</slf4j.version>
@@ -186,6 +189,7 @@
 
       <netty-transport-native-epoll-classifier>linux-x86_64</netty-transport-native-epoll-classifier>
       <netty-transport-native-kqueue-classifier>osx-x86_64</netty-transport-native-kqueue-classifier>
+<!--      <netty-tcnative-native-classifier>linux-x86_64</netty-tcnative-native-classifier> -->
 
       <!-- Ignore failed tests by default because there are "known" failures in the full test-suite.
            This will be set to false for the "fast-tests" profile as none of those tests should fail. -->
@@ -544,6 +548,13 @@
             <groupId>io.netty</groupId>
             <artifactId>netty-codec-http</artifactId>
             <version>${netty.version}</version>
+            <!-- License: Apache 2.0 -->
+         </dependency>
+         <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-tcnative</artifactId>
+            <version>${netty.tcnative.version}</version>
+            <classifier>${os.detected.classifier}</classifier>
             <!-- License: Apache 2.0 -->
          </dependency>
          <dependency>
@@ -1249,6 +1260,13 @@
    </profiles>
 
    <build>
+      <extensions>
+         <extension>
+            <groupId>kr.motd.maven</groupId>
+            <artifactId>os-maven-plugin</artifactId>
+            <version>1.6.0</version>
+         </extension>
+      </extensions>
       <pluginManagement>
          <plugins>
          <plugin>

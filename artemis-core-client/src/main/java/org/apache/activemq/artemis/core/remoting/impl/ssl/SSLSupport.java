@@ -41,6 +41,7 @@ import java.security.cert.PKIXBuilderParameters;
 import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
+import java.util.Enumeration;
 
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
@@ -109,13 +110,28 @@ public class SSLSupport {
                                                final String trustStoreProvider,
                                                final String trustStorePath,
                                                final String trustStorePassword,
-                                               final String sslProvider) throws Exception {
-
-      KeyStore keyStore = SSLSupport.loadKeystore(keystoreProvider, keystorePath, keystorePassword);
-      String alias = keyStore.aliases().nextElement();
-      PrivateKey privateKey = (PrivateKey) keyStore.getKey(alias, keystorePassword.toCharArray());
-      X509Certificate certificate = (X509Certificate) keyStore.getCertificate(alias);
-      return SslContextBuilder.forServer(privateKey, certificate).sslProvider(SslProvider.valueOf(sslProvider)).trustManager(SSLSupport.loadTrustManagerFactory(trustStoreProvider, trustStorePath, trustStorePassword, false, null)).build();
+                                               final String sslProvider,
+                                               final boolean forServer) throws Exception {
+      PrivateKey privateKey = null;
+      X509Certificate certificate = null;
+      if (keystorePath != null) {
+         KeyStore keyStore = SSLSupport.loadKeystore(keystoreProvider, keystorePath, keystorePassword);
+         Enumeration<String> enumAlias = keyStore.aliases();
+         if (enumAlias.hasMoreElements()) {
+            String alias = keyStore.aliases().nextElement();
+            privateKey = (PrivateKey) keyStore.getKey(alias, keystorePassword.toCharArray());
+            certificate = (X509Certificate) keyStore.getCertificate(alias);
+         }
+      }
+      if (forServer) {
+         return SslContextBuilder.forServer(privateKey, certificate).sslProvider(SslProvider.valueOf(sslProvider)).trustManager(SSLSupport.loadTrustManagerFactory(trustStoreProvider, trustStorePath, trustStorePassword, false, null)).build();
+      } else {
+         if (privateKey != null) {
+            return SslContextBuilder.forClient().sslProvider(SslProvider.valueOf(sslProvider)).keyManager(privateKey, certificate).trustManager(SSLSupport.loadTrustManagerFactory(trustStoreProvider, trustStorePath, trustStorePassword, false, null)).build();
+         } else {
+            return SslContextBuilder.forClient().sslProvider(SslProvider.valueOf(sslProvider)).trustManager(SSLSupport.loadTrustManagerFactory(trustStoreProvider, trustStorePath, trustStorePassword, false, null)).build();
+         }
+      }
    }
 
    public static String[] parseCommaSeparatedListIntoArray(String suites) {

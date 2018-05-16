@@ -98,6 +98,7 @@ import io.netty.util.AttributeKey;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.ResourceLeakDetector.Level;
 import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
 import org.apache.activemq.artemis.api.core.ActiveMQException;
@@ -642,7 +643,7 @@ public class NettyConnector extends AbstractConnector {
                                        String realTrustStorePath,
                                        String realTrustStorePassword) throws Exception {
 
-      SslContext context = SSLSupport.createNettyContext(realKeyStoreProvider, realKeyStorePath, realKeyStorePassword, realTrustStoreProvider, realTrustStorePath, realTrustStorePassword, sslProvider);
+      SslContext context = SSLSupport.createNettyContext(realKeyStoreProvider, realKeyStorePath, realKeyStorePassword, realTrustStoreProvider, realTrustStorePath, realTrustStorePassword, sslProvider, false);
 
       Subject subject = null;
       if (kerb5Config != null) {
@@ -807,7 +808,6 @@ public class NettyConnector extends AbstractConnector {
          return conn;
       } else {
          Throwable t = future.cause();
-
          if (t != null && !(t instanceof ConnectException)) {
             ActiveMQClientLogger.LOGGER.errorCreatingNettyConnection(future.cause());
          }

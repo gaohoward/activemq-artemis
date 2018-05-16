@@ -29,7 +29,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-@RunWith(value = Parameterized.class)
+@RunWith(Parameterized.class)
 public class SSLSupportTest extends ActiveMQTestBase {
 
    @Parameterized.Parameters(name = "storeType={0}")

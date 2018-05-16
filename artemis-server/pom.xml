@@ -125,6 +125,11 @@
          <artifactId>netty-codec</artifactId>
       </dependency>
       <dependency>
+         <groupId>io.netty</groupId>
+         <artifactId>netty-tcnative</artifactId>
+         <classifier>${os.detected.classifier}</classifier>
+      </dependency>
+      <dependency>
          <groupId>commons-beanutils</groupId>
          <artifactId>commons-beanutils</artifactId>
       </dependency>

@@ -461,7 +461,11 @@ following additional properties:
     which are support through openssl but not through the JDK provider. See https://en.wikipedia.org/wiki/Comparison_of_TLS_implementations
     for more information's.
     
-    
+    Note: On Windows platform if you use `OPENSSL` provider make sure you have OpenSSL installed.
+    It's likely you have to build OpenSSL[http://www.openssl.org] from source for your specific Windows version. In that
+    case make sure you add your OpenSSL binaries to your PATH environment variable. `nety-tcnative`
+    also depends on Apache APR[https://apr.apache.org] runtime to work. So make sure you correctly build/install Apache APR in
+    your system and the APR runtime library in your PATH environment variables.
     
 ### Configuring Netty HTTP
 
