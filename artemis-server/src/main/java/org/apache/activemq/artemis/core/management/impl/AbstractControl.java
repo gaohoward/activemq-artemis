@@ -28,6 +28,7 @@ import java.util.concurrent.Callable;
 
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.SimpleString;
+import org.apache.activemq.artemis.audit.AuditLogService;
 import org.apache.activemq.artemis.core.message.impl.CoreMessage;
 import org.apache.activemq.artemis.core.persistence.StorageManager;
 import org.apache.activemq.artemis.core.persistence.impl.journal.DummyOperationContext;
@@ -111,6 +112,21 @@ public abstract class AbstractControl extends StandardMBean {
    }
 
    protected String sendMessage(SimpleString address,
+                                ActiveMQServer server,
+                                Map<String, String> headers,
+                                int type,
+                                String body,
+                                boolean durable,
+                                String user,
+                                String password,
+                                Long...queueID) throws Exception {
+      return AuditLogService.audit(AuditLogService.SEND_MESSAGE, this,
+         ()->this.sendMessageInternal(address, server, headers, type, body, durable, user, password),
+            address, server, headers, type, body, durable, user, "****");
+
+   }
+
+   private String sendMessageInternal(SimpleString address,
                                 ActiveMQServer server,
                                 Map<String, String> headers,
                                 int type,

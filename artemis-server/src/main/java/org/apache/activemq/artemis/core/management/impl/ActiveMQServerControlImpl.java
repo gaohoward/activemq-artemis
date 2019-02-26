@@ -61,6 +61,7 @@ import org.apache.activemq.artemis.api.core.management.CoreNotificationType;
 import org.apache.activemq.artemis.api.core.management.DivertControl;
 import org.apache.activemq.artemis.api.core.management.Parameter;
 import org.apache.activemq.artemis.api.core.management.QueueControl;
+import org.apache.activemq.artemis.audit.AuditLogService;
 import org.apache.activemq.artemis.core.client.impl.Topology;
 import org.apache.activemq.artemis.core.client.impl.TopologyMemberImpl;
 import org.apache.activemq.artemis.core.config.BridgeConfiguration;
@@ -689,6 +690,10 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
 
    @Override
    public String createAddress(String name, String routingTypes) throws Exception {
+      return AuditLogService.audit(AuditLogService.CREATE_ADDRESS, this.server, ()-> this.createAddressInternal(name, routingTypes), name, routingTypes);
+   }
+
+   private String createAddressInternal(String name, String routingTypes) throws Exception {
       checkStarted();
 
       clearIO();
@@ -708,8 +713,13 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
       }
    }
 
+
    @Override
    public String updateAddress(String name, String routingTypes) throws Exception {
+      return AuditLogService.audit(AuditLogService.UPDATE_ADDRESS, this.server, ()-> this.updateAddressInternal(name, routingTypes), name, routingTypes);
+   }
+
+   public String updateAddressInternal(String name, String routingTypes) throws Exception {
       checkStarted();
 
       clearIO();
@@ -741,6 +751,14 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
 
    @Override
    public void deleteAddress(String name, boolean force) throws Exception {
+      AuditLogService.audit(AuditLogService.DELETE_ADDRESS, this.server,
+         ()-> {
+            this.deleteAddressInternal(name, force);
+            return null;
+         }, name, force);
+   }
+
+   public void deleteAddressInternal(String name, boolean force) throws Exception {
       checkStarted();
 
       clearIO();
@@ -762,6 +780,18 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
    @Deprecated
    @Override
    public void deployQueue(final String address,
+                           final String name,
+                           final String filterStr,
+                           final boolean durable) throws Exception {
+      AuditLogService.audit(AuditLogService.CREATE_QUEUE, this.server,
+         ()-> {
+            this.deployQueueInternal(address, name, filterStr, durable);
+            return null;
+         }, address, name, filterStr, durable);
+   }
+
+
+   private void deployQueueInternal(final String address,
                            final String name,
                            final String filterStr,
                            final boolean durable) throws Exception {
@@ -854,6 +884,27 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
                              int consumersBeforeDispatch,
                              long delayBeforeDispatch,
                              boolean autoCreateAddress) throws Exception {
+      return AuditLogService.audit(AuditLogService.CREATE_QUEUE, this.server,
+         ()->this.createQueueInternal(address, routingType, name, filterStr, durable, maxConsumers, purgeOnNoConsumers, exclusive, lastValue, lastValueKey, nonDestructive, consumersBeforeDispatch, delayBeforeDispatch, autoCreateAddress),
+            address, routingType, name, filterStr, durable, maxConsumers,
+            purgeOnNoConsumers, exclusive, lastValue, lastValueKey,
+            nonDestructive, consumersBeforeDispatch, delayBeforeDispatch, autoCreateAddress);
+   }
+
+   private String createQueueInternal(String address,
+                             String routingType,
+                             String name,
+                             String filterStr,
+                             boolean durable,
+                             int maxConsumers,
+                             boolean purgeOnNoConsumers,
+                             boolean exclusive,
+                             boolean lastValue,
+                             String lastValueKey,
+                             boolean nonDestructive,
+                             int consumersBeforeDispatch,
+                             long delayBeforeDispatch,
+                             boolean autoCreateAddress) throws Exception {
       checkStarted();
 
       clearIO();
@@ -911,6 +962,21 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
                              Boolean exclusive,
                              Boolean groupRebalance,
                              Integer groupBuckets,
+                             Boolean nonDestructive,
+                             Integer consumersBeforeDispatch,
+                             Long delayBeforeDispatch,
+                             String user) throws Exception {
+      return AuditLogService.audit(AuditLogService.UPDATE_QUEUE, this.server,
+         ()->this.updateQueueInternal(name, routingType, filter, maxConsumers, purgeOnNoConsumers, exclusive, nonDestructive, consumersBeforeDispatch, delayBeforeDispatch, user),
+            name, routingType, filter, maxConsumers, purgeOnNoConsumers, exclusive, nonDestructive, consumersBeforeDispatch, delayBeforeDispatch, user);
+   }
+
+   public String updateQueueInternal(String name,
+                             String routingType,
+                             String filter,
+                             Integer maxConsumers,
+                             Boolean purgeOnNoConsumers,
+                             Boolean exclusive,
                              Boolean nonDestructive,
                              Integer consumersBeforeDispatch,
                              Long delayBeforeDispatch,
@@ -1034,6 +1100,14 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
 
    @Override
    public void destroyQueue(final String name, final boolean removeConsumers, final boolean autoDeleteAddress) throws Exception {
+      AuditLogService.audit(AuditLogService.DELETE_QUEUE, this.server,
+         ()-> {
+            this.destroyQueueInternal(name, removeConsumers, autoDeleteAddress);
+            return null;
+         }, name, removeConsumers, autoDeleteAddress);
+   }
+
+   private void destroyQueueInternal(final String name, final boolean removeConsumers, final boolean autoDeleteAddress) throws Exception {
       checkStarted();
 
       clearIO();
@@ -1598,6 +1672,11 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
 
    @Override
    public boolean closeConnectionsForAddress(final String ipAddress) {
+      return AuditLogService.audit2(AuditLogService.CLOSE_CONNECTIONS_FOR_ADDRESS, this.server,
+         ()->this.closeConnectionsForAddressInternal(ipAddress), ipAddress);
+   }
+
+   private boolean closeConnectionsForAddressInternal(final String ipAddress) {
       checkStarted();
 
       clearIO();
@@ -1622,6 +1701,11 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
 
    @Override
    public boolean closeConsumerConnectionsForAddress(final String address) {
+      return AuditLogService.audit2(AuditLogService.CLOSE_CONSUMER_CONNECTIONS_FOR_ADDRESS, this.server,
+         ()->this.closeConsumerConnectionsForAddressInternal(address), address);
+   }
+
+   private boolean closeConsumerConnectionsForAddressInternal(final String address) {
       boolean closed = false;
       checkStarted();
 
@@ -1660,6 +1744,11 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
 
    @Override
    public boolean closeConnectionsForUser(final String userName) {
+      return AuditLogService.audit2(AuditLogService.CLOSE_CONNECTIONS_FOR_USER, this.server,
+         ()->this.closeConnectionsForUserInternal(userName), userName);
+   }
+
+   private boolean closeConnectionsForUserInternal(final String userName) {
       boolean closed = false;
       checkStarted();
 
@@ -1690,6 +1779,11 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
 
    @Override
    public boolean closeConnectionWithID(final String ID) {
+      return AuditLogService.audit2(AuditLogService.CLOSE_CONNECTION_WITH_ID, this.server,
+         ()->this.closeConnectionWithIDInternal(ID), ID);
+   }
+
+   private boolean closeConnectionWithIDInternal(final String ID) {
       checkStarted();
 
       clearIO();
@@ -2296,6 +2390,48 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
                                   final boolean autoDeleteQueues,
                                   final boolean autoCreateAddresses,
                                   final boolean autoDeleteAddresses) throws Exception {
+      AuditLogService.audit(AuditLogService.ADD_ADDRESS_SETTINGS, this.server,
+         ()-> {
+            this.addAddressSettingsInternal(address, DLA, expiryAddress, expiryDelay, lastValueQueue, deliveryAttempts,
+               maxSizeBytes, pageSizeBytes, pageMaxCacheSize, redeliveryDelay, redeliveryMultiplier, maxRedeliveryDelay,
+               redistributionDelay, sendToDLAOnNoRoute, addressFullMessagePolicy, slowConsumerThreshold, slowConsumerCheckPeriod,
+               slowConsumerPolicy, autoCreateJmsQueues, autoDeleteJmsQueues, autoCreateJmsTopics, autoDeleteJmsTopics, autoCreateQueues,
+               autoDeleteQueues, autoCreateAddresses, autoDeleteAddresses);
+            return null;
+         }, address, DLA, expiryAddress, expiryDelay, lastValueQueue, deliveryAttempts, maxSizeBytes,
+         pageSizeBytes, pageMaxCacheSize, redeliveryDelay, redeliveryMultiplier, maxRedeliveryDelay,
+         redistributionDelay, sendToDLAOnNoRoute, addressFullMessagePolicy, slowConsumerThreshold,
+         slowConsumerCheckPeriod, slowConsumerPolicy, autoCreateJmsQueues, autoDeleteJmsQueues,
+         autoCreateJmsTopics, autoDeleteJmsTopics, autoCreateQueues, autoDeleteQueues,
+         autoCreateAddresses, autoDeleteAddresses);
+   }
+
+   private void addAddressSettingsInternal(final String address,
+                                  final String DLA,
+                                  final String expiryAddress,
+                                  final long expiryDelay,
+                                  final boolean lastValueQueue,
+                                  final int deliveryAttempts,
+                                  final long maxSizeBytes,
+                                  final int pageSizeBytes,
+                                  final int pageMaxCacheSize,
+                                  final long redeliveryDelay,
+                                  final double redeliveryMultiplier,
+                                  final long maxRedeliveryDelay,
+                                  final long redistributionDelay,
+                                  final boolean sendToDLAOnNoRoute,
+                                  final String addressFullMessagePolicy,
+                                  final long slowConsumerThreshold,
+                                  final long slowConsumerCheckPeriod,
+                                  final String slowConsumerPolicy,
+                                  final boolean autoCreateJmsQueues,
+                                  final boolean autoDeleteJmsQueues,
+                                  final boolean autoCreateJmsTopics,
+                                  final boolean autoDeleteJmsTopics,
+                                  final boolean autoCreateQueues,
+                                  final boolean autoDeleteQueues,
+                                  final boolean autoCreateAddresses,
+                                  final boolean autoDeleteAddresses) throws Exception {
       checkStarted();
 
       // JBPAPP-6334 requested this to be pageSizeBytes > maxSizeBytes
@@ -2661,6 +2797,14 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
 
    @Override
    public void createConnectorService(final String name, final String factoryClass, final Map<String, Object> parameters) throws Exception {
+      AuditLogService.audit(AuditLogService.CREATE_CONNECTOR_SERVICE, this.server,
+         ()-> {
+            this.createConnectorServiceInternal(name, factoryClass, parameters);
+            return null;
+         }, name, factoryClass, parameters);
+   }
+
+   private void createConnectorServiceInternal(final String name, final String factoryClass, final Map<String, Object> parameters) throws Exception {
       checkStarted();
 
       clearIO();
@@ -2676,6 +2820,14 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
 
    @Override
    public void destroyConnectorService(final String name) throws Exception {
+      AuditLogService.audit(AuditLogService.DESTROY_CONNECTOR_SERVICE, this.server,
+         ()-> {
+            this.destroyConnectorServiceInternal(name);
+            return null;
+         }, name);
+   }
+
+   private void destroyConnectorServiceInternal(final String name) throws Exception {
       checkStarted();
 
       clearIO();
@@ -2689,6 +2841,11 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
 
    @Override
    public String[] getConnectorServices() {
+      return AuditLogService.audit2(AuditLogService.GET_CONNECTOR_SERVICES, this.server,
+         ()->this.getConnectorServicesInternal());
+   }
+
+   private String[] getConnectorServicesInternal() {
       checkStarted();
 
       clearIO();

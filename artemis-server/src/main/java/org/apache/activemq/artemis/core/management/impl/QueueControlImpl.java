@@ -54,6 +54,76 @@ import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.utils.JsonLoader;
 import org.apache.activemq.artemis.utils.collections.LinkedListIterator;
 
+import static org.apache.activemq.artemis.audit.AuditLogService.BROWSE_QUEUE;
+import static org.apache.activemq.artemis.audit.AuditLogService.CHANGE_MESSAGE_PRIORITY;
+import static org.apache.activemq.artemis.audit.AuditLogService.COUNT_DELIVERY_MESSAGES;
+import static org.apache.activemq.artemis.audit.AuditLogService.COUNT_MESSAGES;
+import static org.apache.activemq.artemis.audit.AuditLogService.DELETE_MESSAGE;
+import static org.apache.activemq.artemis.audit.AuditLogService.DELETE_MESSAGES;
+import static org.apache.activemq.artemis.audit.AuditLogService.EXPIRE_MESSAGE;
+import static org.apache.activemq.artemis.audit.AuditLogService.FLUSH_EXECUTOR;
+import static org.apache.activemq.artemis.audit.AuditLogService.GET_CONSUMER_COUNT;
+import static org.apache.activemq.artemis.audit.AuditLogService.GET_DELIVERING_COUNT;
+import static org.apache.activemq.artemis.audit.AuditLogService.GET_DELIVERING_SIZE;
+import static org.apache.activemq.artemis.audit.AuditLogService.GET_DLA;
+import static org.apache.activemq.artemis.audit.AuditLogService.GET_DURABLE_DELIVERING_COUNT;
+import static org.apache.activemq.artemis.audit.AuditLogService.GET_DURABLE_DELIVERING_SIZE;
+import static org.apache.activemq.artemis.audit.AuditLogService.GET_DURABLE_MESSAGE_COUNT;
+import static org.apache.activemq.artemis.audit.AuditLogService.GET_DURABLE_PERSIST_SIZE;
+import static org.apache.activemq.artemis.audit.AuditLogService.GET_DURABLE_SCHEDULED_COUNT;
+import static org.apache.activemq.artemis.audit.AuditLogService.GET_DURABLE_SCHEDULED_SIZE;
+import static org.apache.activemq.artemis.audit.AuditLogService.GET_EXPIRY_ADDRESS;
+import static org.apache.activemq.artemis.audit.AuditLogService.GET_FILTER;
+import static org.apache.activemq.artemis.audit.AuditLogService.GET_FIRST_MESSAGE_AGE;
+import static org.apache.activemq.artemis.audit.AuditLogService.GET_FIRST_MESSAGE_AS_JSON;
+import static org.apache.activemq.artemis.audit.AuditLogService.GET_FIRST_MESSAGE_TIMESTAMP;
+import static org.apache.activemq.artemis.audit.AuditLogService.GET_GROUP_COUNT;
+import static org.apache.activemq.artemis.audit.AuditLogService.GET_ID;
+import static org.apache.activemq.artemis.audit.AuditLogService.GET_MAX_CONSUMERS;
+import static org.apache.activemq.artemis.audit.AuditLogService.GET_MESSAGES_ACKED;
+import static org.apache.activemq.artemis.audit.AuditLogService.GET_MESSAGES_ADDED;
+import static org.apache.activemq.artemis.audit.AuditLogService.GET_MESSAGES_EXPIRED;
+import static org.apache.activemq.artemis.audit.AuditLogService.GET_MESSAGES_KILLED;
+import static org.apache.activemq.artemis.audit.AuditLogService.GET_MESSAGE_COUNT;
+import static org.apache.activemq.artemis.audit.AuditLogService.GET_NAME;
+import static org.apache.activemq.artemis.audit.AuditLogService.GET_PERSISTENT_SIZE;
+import static org.apache.activemq.artemis.audit.AuditLogService.GET_ROUTING_TYPE;
+import static org.apache.activemq.artemis.audit.AuditLogService.GET_SCHEDULED_COUNT;
+import static org.apache.activemq.artemis.audit.AuditLogService.GET_SCHEDULED_SIZE;
+import static org.apache.activemq.artemis.audit.AuditLogService.GET_USER;
+import static org.apache.activemq.artemis.audit.AuditLogService.IS_CONFIGURATION_MANAGED;
+import static org.apache.activemq.artemis.audit.AuditLogService.IS_DURABLE;
+import static org.apache.activemq.artemis.audit.AuditLogService.IS_EXCLUSIVE;
+import static org.apache.activemq.artemis.audit.AuditLogService.IS_LAST_VALUE;
+import static org.apache.activemq.artemis.audit.AuditLogService.IS_PAUSED;
+import static org.apache.activemq.artemis.audit.AuditLogService.IS_PURGE_ON_NO_CONSUMERS;
+import static org.apache.activemq.artemis.audit.AuditLogService.IS_TEMPORARY;
+import static org.apache.activemq.artemis.audit.AuditLogService.LIST_CONSUMERS_AS_JSON;
+import static org.apache.activemq.artemis.audit.AuditLogService.LIST_DELIVERING_MESSAGES;
+import static org.apache.activemq.artemis.audit.AuditLogService.LIST_GROUPS_AS_JSON;
+import static org.apache.activemq.artemis.audit.AuditLogService.LIST_MESSAGES;
+import static org.apache.activemq.artemis.audit.AuditLogService.LIST_MESSAGE_COUNTER;
+import static org.apache.activemq.artemis.audit.AuditLogService.LIST_MESSAGE_COUNTER_AS_HTML;
+import static org.apache.activemq.artemis.audit.AuditLogService.LIST_MESSAGE_COUNTER_HISTORY;
+import static org.apache.activemq.artemis.audit.AuditLogService.LIST_MESSAGE_COUNTER_HISTORY_AS_HTML;
+import static org.apache.activemq.artemis.audit.AuditLogService.LIST_SCHEDULED_MESSAGES;
+import static org.apache.activemq.artemis.audit.AuditLogService.MOVE_MESSAGE;
+import static org.apache.activemq.artemis.audit.AuditLogService.PAUSE;
+import static org.apache.activemq.artemis.audit.AuditLogService.RESET_ALL_GROUPS;
+import static org.apache.activemq.artemis.audit.AuditLogService.RESET_GROUP;
+import static org.apache.activemq.artemis.audit.AuditLogService.RESET_MESSAGES_ACKED;
+import static org.apache.activemq.artemis.audit.AuditLogService.RESET_MESSAGES_ADDED;
+import static org.apache.activemq.artemis.audit.AuditLogService.RESET_MESSAGES_EXPIRED;
+import static org.apache.activemq.artemis.audit.AuditLogService.RESET_MESSAGES_KILLED;
+import static org.apache.activemq.artemis.audit.AuditLogService.RESET_MESSAGE_COUNTER;
+import static org.apache.activemq.artemis.audit.AuditLogService.RESUME;
+import static org.apache.activemq.artemis.audit.AuditLogService.RETRY_MESSAGE;
+import static org.apache.activemq.artemis.audit.AuditLogService.RETRY_MESSAGES;
+import static org.apache.activemq.artemis.audit.AuditLogService.SEND_MESSAGE;
+import static org.apache.activemq.artemis.audit.AuditLogService.audit;
+import static org.apache.activemq.artemis.audit.AuditLogService.audit2;
+
+
 public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    public static final int FLUSH_LIMIT = 500;
@@ -128,6 +198,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public String getName() {
+      return audit2(GET_NAME, this.queue,
+         ()->this.getNameInternal());
+   }
+
+   private String getNameInternal() {
       clearIO();
       try {
          return queue.getName().toString();
@@ -145,6 +220,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public String getFilter() {
+      return audit2(GET_FILTER, this.queue,
+         ()->this.getFilterInternal());
+   }
+
+   private String getFilterInternal() {
       checkStarted();
 
       clearIO();
@@ -159,6 +239,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public boolean isDurable() {
+      return audit2(IS_DURABLE, this.queue,
+         ()->this.isDurableInternal());
+   }
+
+   private boolean isDurableInternal() {
       checkStarted();
 
       clearIO();
@@ -171,6 +256,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public String getUser() {
+      return audit2(GET_USER, this.queue,
+         ()->this.getUserInternal());
+   }
+
+   private String getUserInternal() {
       checkStarted();
 
       clearIO();
@@ -185,6 +275,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public String getRoutingType() {
+      return audit2(GET_ROUTING_TYPE, this.queue,
+         ()->this.getRoutingTypeInternal());
+   }
+
+   private String getRoutingTypeInternal() {
       checkStarted();
 
       clearIO();
@@ -198,6 +293,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public boolean isTemporary() {
+      return audit2(IS_TEMPORARY, this.queue,
+         ()->this.isTemporaryInternal());
+   }
+
+   private boolean isTemporaryInternal() {
       checkStarted();
 
       clearIO();
@@ -210,6 +310,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public long getMessageCount() {
+      return audit2(GET_MESSAGE_COUNT, this.queue,
+         ()->this.getMessageCountInternal());
+   }
+
+   private long getMessageCountInternal() {
       checkStarted();
 
       clearIO();
@@ -222,6 +327,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public long getPersistentSize() {
+      return audit2(GET_PERSISTENT_SIZE, this.queue,
+         ()->this.getPersistentSizeInternal());
+   }
+
+   private long getPersistentSizeInternal() {
       checkStarted();
 
       clearIO();
@@ -234,6 +344,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public long getDurableMessageCount() {
+      return audit2(GET_DURABLE_MESSAGE_COUNT, this.queue,
+         ()->this.getDurableMessageCountInternal());
+   }
+
+   private long getDurableMessageCountInternal() {
       checkStarted();
 
       clearIO();
@@ -246,6 +361,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public long getDurablePersistentSize() {
+      return audit2(GET_DURABLE_PERSIST_SIZE, this.queue,
+         ()->this.getDurablePersistentSizeInternal());
+   }
+
+   private long getDurablePersistentSizeInternal() {
       checkStarted();
 
       clearIO();
@@ -258,6 +378,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public int getConsumerCount() {
+      return audit2(GET_CONSUMER_COUNT, this.queue,
+         ()->this.getConsumerCountInternal());
+   }
+
+   private int getConsumerCountInternal() {
       checkStarted();
 
       clearIO();
@@ -270,6 +395,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public int getDeliveringCount() {
+      return audit2(GET_DELIVERING_COUNT, this.queue,
+         ()->this.getDeliveringCountInternal());
+   }
+
+   private int getDeliveringCountInternal() {
       checkStarted();
 
       clearIO();
@@ -282,6 +412,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public long getDeliveringSize() {
+      return audit2(GET_DELIVERING_SIZE, this.queue,
+         ()->this.getDeliveringSizeInternal());
+   }
+
+   private long getDeliveringSizeInternal() {
       checkStarted();
 
       clearIO();
@@ -294,6 +429,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public int getDurableDeliveringCount() {
+      return audit2(GET_DURABLE_DELIVERING_COUNT, this.queue,
+         ()->this.getDurableDeliveringCountInternal());
+   }
+
+   private int getDurableDeliveringCountInternal() {
       checkStarted();
 
       clearIO();
@@ -306,6 +446,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public long getDurableDeliveringSize() {
+      return audit2(GET_DURABLE_DELIVERING_SIZE, this.queue,
+         ()->this.getDurableDeliveringSizeInternal());
+   }
+
+   private long getDurableDeliveringSizeInternal() {
       checkStarted();
 
       clearIO();
@@ -318,6 +463,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public long getMessagesAdded() {
+      return audit2(GET_MESSAGES_ADDED, this.queue,
+         ()->this.getMessagesAddedInternal());
+   }
+
+   private long getMessagesAddedInternal() {
       checkStarted();
 
       clearIO();
@@ -330,6 +480,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public long getMessagesAcknowledged() {
+      return audit2(GET_MESSAGES_ACKED, this.queue,
+         ()->this.getMessagesAcknowledgedInternal());
+   }
+
+   private long getMessagesAcknowledgedInternal() {
       checkStarted();
 
       clearIO();
@@ -342,6 +497,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public long getMessagesExpired() {
+      return audit2(GET_MESSAGES_EXPIRED, this.queue,
+         ()->this.getMessagesExpiredInternal());
+   }
+
+   private long getMessagesExpiredInternal() {
       checkStarted();
 
       clearIO();
@@ -354,6 +514,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public long getMessagesKilled() {
+      return audit2(GET_MESSAGES_KILLED, this.queue,
+         ()->this.getMessagesKilledInternal());
+   }
+
+   private long getMessagesKilledInternal() {
       checkStarted();
 
       clearIO();
@@ -366,6 +531,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public long getID() {
+      return audit2(GET_ID, this.queue,
+         ()->this.getIDInternal());
+   }
+
+   private long getIDInternal() {
       checkStarted();
 
       clearIO();
@@ -378,6 +548,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public long getScheduledCount() {
+      return audit2(GET_SCHEDULED_COUNT, this.queue,
+         ()->this.getScheduledCountInternal());
+   }
+
+   private long getScheduledCountInternal() {
       checkStarted();
 
       clearIO();
@@ -390,6 +565,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public long getScheduledSize() {
+      return audit2(GET_SCHEDULED_SIZE, this.queue,
+         ()->this.getScheduledSizeInternal());
+   }
+
+   private long getScheduledSizeInternal() {
       checkStarted();
 
       clearIO();
@@ -402,6 +582,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public long getDurableScheduledCount() {
+      return audit2(GET_DURABLE_SCHEDULED_COUNT, this.queue,
+         ()->this.getDurableScheduledCountInternal());
+   }
+
+   private long getDurableScheduledCountInternal() {
       checkStarted();
 
       clearIO();
@@ -414,6 +599,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public long getDurableScheduledSize() {
+      return audit2(GET_DURABLE_SCHEDULED_SIZE, this.queue,
+         ()->this.getDurableScheduledSizeInternal());
+   }
+
+   private long getDurableScheduledSizeInternal() {
       checkStarted();
 
       clearIO();
@@ -426,6 +616,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public String getDeadLetterAddress() {
+      return audit2(GET_DLA, this.queue,
+         ()->this.getDeadLetterAddressInternal());
+   }
+
+   private String getDeadLetterAddressInternal() {
       checkStarted();
 
       clearIO();
@@ -443,6 +638,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public String getExpiryAddress() {
+      return audit2(GET_EXPIRY_ADDRESS, this.queue,
+         ()->this.getExpiryAddressInternal());
+   }
+
+   private String getExpiryAddressInternal() {
       checkStarted();
 
       clearIO();
@@ -461,6 +661,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public int getMaxConsumers() {
+      return audit2(GET_MAX_CONSUMERS, this.queue,
+         ()->this.getMaxConsumersInternal());
+   }
+
+   private int getMaxConsumersInternal() {
       checkStarted();
 
       clearIO();
@@ -473,6 +678,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public boolean isPurgeOnNoConsumers() {
+      return audit2(IS_PURGE_ON_NO_CONSUMERS, this.queue,
+         ()->this.isPurgeOnNoConsumersInternal());
+   }
+
+   private boolean isPurgeOnNoConsumersInternal() {
       checkStarted();
 
       clearIO();
@@ -485,6 +695,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public boolean isConfigurationManaged() {
+      return audit2(IS_CONFIGURATION_MANAGED, this.queue,
+         ()->this.isConfigurationManagedInternal());
+   }
+
+   private boolean isConfigurationManagedInternal() {
       checkStarted();
 
       clearIO();
@@ -497,6 +712,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public boolean isExclusive() {
+      return audit2(IS_EXCLUSIVE, this.queue,
+         ()->this.isExclusiveInternal());
+   }
+
+   private boolean isExclusiveInternal() {
       checkStarted();
 
       clearIO();
@@ -509,6 +729,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public boolean isLastValue() {
+      return audit2(IS_LAST_VALUE, this.queue,
+         ()->this.isLastValueInternal());
+   }
+
+   private boolean isLastValueInternal() {
       checkStarted();
 
       clearIO();
@@ -521,6 +746,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public Map<String, Object>[] listScheduledMessages() throws Exception {
+      return audit(LIST_SCHEDULED_MESSAGES, this.queue,
+         ()->this.listScheduledMessagesInternal());
+   }
+
+   private Map<String, Object>[] listScheduledMessagesInternal() throws Exception {
       checkStarted();
 
       clearIO();
@@ -560,6 +790,17 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public Map<String, Map<String, Object>[]> listDeliveringMessages() throws ActiveMQException {
+      try {
+         return audit(LIST_DELIVERING_MESSAGES, this.queue,
+            ()->this.listDeliveringMessagesInternal());
+      } catch (ActiveMQException ae) {
+         throw ae;
+      } catch (Exception e) {
+         throw new RuntimeException("Unexpected exception", e);
+      }
+   }
+
+   private Map<String, Map<String, Object>[]> listDeliveringMessagesInternal() throws ActiveMQException {
       checkStarted();
 
       clearIO();
@@ -592,6 +833,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public Map<String, Object>[] listMessages(final String filterStr) throws Exception {
+      return audit(LIST_MESSAGES, this.queue,
+         ()->this.listMessagesInternal(filterStr), filterStr);
+   }
+
+   private Map<String, Object>[] listMessagesInternal(final String filterStr) throws Exception {
       checkStarted();
 
       clearIO();
@@ -656,11 +902,21 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public String getFirstMessageAsJSON() throws Exception {
+      return audit(GET_FIRST_MESSAGE_AS_JSON, this.queue,
+         ()->this.getFirstMessageAsJSONInternal());
+   }
+
+   private String getFirstMessageAsJSONInternal() throws Exception {
       return toJSON(getFirstMessage());
    }
 
    @Override
    public Long getFirstMessageTimestamp() throws Exception {
+      return audit(GET_FIRST_MESSAGE_TIMESTAMP, this.queue,
+         ()->this.getFirstMessageTimestampInternal());
+   }
+
+   private Long getFirstMessageTimestampInternal() throws Exception {
       Map<String, Object>[] _message = getFirstMessage();
       if (_message == null || _message.length == 0 || _message[0] == null) {
          return null;
@@ -674,6 +930,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public Long getFirstMessageAge() throws Exception {
+      return audit(GET_FIRST_MESSAGE_AGE, this.queue,
+         ()->this.getFirstMessageAgeInternal());
+   }
+
+   private Long getFirstMessageAgeInternal() throws Exception {
       Long firstMessageTimestamp = getFirstMessageTimestamp();
       if (firstMessageTimestamp == null) {
          return null;
@@ -699,6 +960,12 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
    }
 
    private Map<String, Long> intenalCountMessages(final String filterStr, final String groupByPropertyStr) throws Exception {
+      return audit(COUNT_MESSAGES, this.queue,
+         ()->this.internalCountMessagesInternal(filterStr, groupByPropertyStr),
+               filterStr, groupByPropertyStr);
+   }
+
+   private Map<String, Long> internalCountMessagesInternal(final String filterStr, final String groupByPropertyStr) throws Exception {
       checkStarted();
 
       clearIO();
@@ -739,6 +1006,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
    }
 
    private Map<String, Long> intenalCountDeliveryMessages(final String filterStr, final String groupByPropertyStr) throws Exception {
+      return audit(COUNT_DELIVERY_MESSAGES, this.queue,
+         ()->this.intenalCountDeliveryMessagesInternal(filterStr, groupByPropertyStr), filterStr, groupByPropertyStr);
+   }
+
+   private Map<String, Long> intenalCountDeliveryMessagesInternal(final String filterStr, final String groupByPropertyStr) throws Exception {
       checkStarted();
 
       clearIO();
@@ -777,6 +1049,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public boolean removeMessage(final long messageID) throws Exception {
+      return audit(DELETE_MESSAGE, this.queue,
+         ()->this.removeMessageInternal(messageID), messageID);
+   }
+
+   private boolean removeMessageInternal(final long messageID) throws Exception {
       checkStarted();
 
       clearIO();
@@ -796,6 +1073,12 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public int removeMessages(final int flushLimit, final String filterStr) throws Exception {
+      return audit(DELETE_MESSAGES, this.queue,
+         ()->this.removeMessagesInternal(flushLimit, filterStr),
+               flushLimit, filterStr);
+   }
+
+   private int removeMessagesInternal(final int flushLimit, final String filterStr) throws Exception {
       checkStarted();
 
       clearIO();
@@ -815,6 +1098,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public boolean expireMessage(final long messageID) throws Exception {
+      return audit(EXPIRE_MESSAGE, this.queue,
+         ()->this.expireMessageInternal(messageID), messageID);
+   }
+
+   private boolean expireMessageInternal(final long messageID) throws Exception {
       checkStarted();
 
       clearIO();
@@ -827,6 +1115,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public int expireMessages(final String filterStr) throws Exception {
+      return audit(EXPIRE_MESSAGE, this.queue,
+         ()->this.expireMessagesInternal(filterStr), filterStr);
+   }
+
+   private int expireMessagesInternal(final String filterStr) throws Exception {
       checkStarted();
 
       clearIO();
@@ -842,6 +1135,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public boolean retryMessage(final long messageID) throws Exception {
+      return audit(RETRY_MESSAGE, this.queue,
+         ()->this.retryMessageInternal(messageID), messageID);
+   }
+
+   private boolean retryMessageInternal(final long messageID) throws Exception {
 
       checkStarted();
       clearIO();
@@ -867,6 +1165,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public int retryMessages() throws Exception {
+      return audit(RETRY_MESSAGES, this.queue,
+         ()->this.retryMessagesInternal());
+   }
+
+   private int retryMessagesInternal() throws Exception {
       checkStarted();
       clearIO();
 
@@ -884,6 +1187,14 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public boolean moveMessage(final long messageID,
+                              final String otherQueueName,
+                              final boolean rejectDuplicates) throws Exception {
+      return audit(MOVE_MESSAGE, this.queue,
+         ()->this.moveMessageInternal(messageID, otherQueueName, rejectDuplicates),
+               messageID, otherQueueName, rejectDuplicates);
+   }
+
+   private boolean moveMessageInternal(final long messageID,
                               final String otherQueueName,
                               final boolean rejectDuplicates) throws Exception {
       checkStarted();
@@ -910,6 +1221,15 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public int moveMessages(final int flushLimit,
+                           final String filterStr,
+                           final String otherQueueName,
+                           final boolean rejectDuplicates) throws Exception {
+      return audit(MOVE_MESSAGE, this.queue,
+         ()->this.moveMessagesInternal(flushLimit, filterStr, otherQueueName, rejectDuplicates),
+               flushLimit, filterStr, otherQueueName, rejectDuplicates);
+   }
+
+   private int moveMessagesInternal(final int flushLimit,
                            final String filterStr,
                            final String otherQueueName,
                            final boolean rejectDuplicates) throws Exception {
@@ -943,6 +1263,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public int sendMessagesToDeadLetterAddress(final String filterStr) throws Exception {
+      return audit(SEND_MESSAGE, this.queue,
+         ()->this.sendMessagesToDeadLetterAddressInternal(filterStr), filterStr);
+   }
+
+   private int sendMessagesToDeadLetterAddressInternal(final String filterStr) throws Exception {
       checkStarted();
 
       clearIO();
@@ -971,6 +1296,12 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public boolean sendMessageToDeadLetterAddress(final long messageID) throws Exception {
+      return audit(SEND_MESSAGE, this.queue,
+         ()->this.sendMessageToDeadLetterAddressInternal(messageID),
+               messageID);
+   }
+
+   private boolean sendMessageToDeadLetterAddressInternal(final long messageID) throws Exception {
       checkStarted();
 
       clearIO();
@@ -983,6 +1314,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public int changeMessagesPriority(final String filterStr, final int newPriority) throws Exception {
+      return audit(CHANGE_MESSAGE_PRIORITY, this.queue,
+         ()->this.changeMessagesPriorityInternal(filterStr, newPriority), filterStr, newPriority);
+   }
+
+   private int changeMessagesPriorityInternal(final String filterStr, final int newPriority) throws Exception {
       checkStarted();
 
       clearIO();
@@ -1000,6 +1336,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public boolean changeMessagePriority(final long messageID, final int newPriority) throws Exception {
+      return audit(CHANGE_MESSAGE_PRIORITY, this.queue,
+         ()->this.changeMessagePriorityInternal(messageID, newPriority), messageID, newPriority);
+   }
+
+   private boolean changeMessagePriorityInternal(final long messageID, final int newPriority) throws Exception {
       checkStarted();
 
       clearIO();
@@ -1015,6 +1356,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public String listMessageCounter() {
+      return audit2(LIST_MESSAGE_COUNTER, this.queue,
+         ()->this.listMessageCounterInternal());
+   }
+
+   private String listMessageCounterInternal() {
       checkStarted();
 
       clearIO();
@@ -1029,6 +1375,14 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public void resetMessageCounter() {
+      audit2(RESET_MESSAGE_COUNTER, this.queue,
+         ()-> {
+            this.resetMessageCounterInternal();
+            return null;
+         });
+   }
+
+   private void resetMessageCounterInternal() {
       checkStarted();
 
       clearIO();
@@ -1041,6 +1395,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public String listMessageCounterAsHTML() {
+      return audit2(LIST_MESSAGE_COUNTER_AS_HTML, this.queue,
+         ()->this.listMessageCounterAsHTMLInternal());
+   }
+
+   private String listMessageCounterAsHTMLInternal() {
       checkStarted();
 
       clearIO();
@@ -1053,6 +1412,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public String listMessageCounterHistory() throws Exception {
+      return audit(LIST_MESSAGE_COUNTER_HISTORY, this.queue,
+         ()->this.listMessageCounterHistoryInternal());
+   }
+
+   private String listMessageCounterHistoryInternal() throws Exception {
       checkStarted();
 
       clearIO();
@@ -1065,6 +1429,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public String listMessageCounterHistoryAsHTML() {
+      return audit2(LIST_MESSAGE_COUNTER_HISTORY_AS_HTML, this.queue,
+         ()->this.listMessageCounterHistoryAsHTMLInternal());
+   }
+
+   private String listMessageCounterHistoryAsHTMLInternal() {
       checkStarted();
 
       clearIO();
@@ -1077,6 +1446,14 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public void pause() {
+      audit2(PAUSE, this.queue,
+         ()-> {
+            this.pauseInternal();
+            return null;
+         });
+   }
+
+   private void pauseInternal() {
       checkStarted();
 
       clearIO();
@@ -1090,6 +1467,14 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public void pause(boolean persist) {
+      audit2(PAUSE, this.queue,
+         ()-> {
+            this.pauseInternal(persist);
+            return null;
+         }, persist);
+   }
+
+   private void pauseInternal(boolean persist) {
       checkStarted();
 
       clearIO();
@@ -1099,8 +1484,17 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
          blockOnIO();
       }
    }
+
    @Override
    public void resume() {
+      audit2(RESUME, this.queue,
+         ()-> {
+            this.resumeInternal();
+            return null;
+         });
+   }
+
+   private void resumeInternal() {
       checkStarted();
 
       clearIO();
@@ -1113,6 +1507,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public boolean isPaused() throws Exception {
+      return audit(IS_PAUSED, this.queue,
+         ()->this.isPausedInternal());
+   }
+
+   private boolean isPausedInternal() throws Exception {
       checkStarted();
 
       clearIO();
@@ -1125,6 +1524,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public CompositeData[] browse(int page, int pageSize) throws Exception {
+      return audit(BROWSE_QUEUE, this.queue,
+         ()->this.browseInternal(page, pageSize), page, pageSize);
+   }
+
+   private CompositeData[] browseInternal(int page, int pageSize) throws Exception {
       String filter = null;
       checkStarted();
 
@@ -1168,8 +1572,14 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
    public CompositeData[] browse() throws Exception {
       return browse(null);
    }
+
    @Override
    public CompositeData[] browse(String filter) throws Exception {
+      return audit(BROWSE_QUEUE, this.queue,
+         ()->this.browseInternal(filter), filter);
+   }
+
+   private CompositeData[] browseInternal(String filter) throws Exception {
       checkStarted();
 
       clearIO();
@@ -1205,6 +1615,14 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public void flushExecutor() {
+      audit2(FLUSH_EXECUTOR, this.queue,
+         ()-> {
+            this.flushExecutorInternal();
+            return null;
+         });
+   }
+
+   private void flushExecutorInternal() {
       checkStarted();
 
       clearIO();
@@ -1217,6 +1635,14 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public void resetAllGroups() {
+      audit2(RESET_ALL_GROUPS, this.queue,
+         ()-> {
+            this.resetAllGroupsInternal();
+            return null;
+         });
+   }
+
+   private void resetAllGroupsInternal() {
       checkStarted();
 
       clearIO();
@@ -1229,6 +1655,14 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public void resetGroup(String groupID) {
+      audit2(RESET_GROUP, this.queue,
+         ()-> {
+            this.resetGroupInternal(groupID);
+            return null;
+         }, groupID);
+   }
+
+   private void resetGroupInternal(String groupID) {
       checkStarted();
 
       clearIO();
@@ -1241,6 +1675,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public int getGroupCount() {
+      return audit2(GET_GROUP_COUNT, this.queue,
+         ()->this.getGroupCountInternal());
+   }
+
+   private int getGroupCountInternal() {
       checkStarted();
 
       clearIO();
@@ -1253,6 +1692,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public String listGroupsAsJSON() throws Exception {
+      return audit(LIST_GROUPS_AS_JSON, this.queue,
+         ()->this.listGroupsAsJSONInternal());
+   }
+
+   private String listGroupsAsJSONInternal() throws Exception {
       checkStarted();
 
       clearIO();
@@ -1281,6 +1725,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public String listConsumersAsJSON() throws Exception {
+      return audit(LIST_CONSUMERS_AS_JSON, this.queue,
+         ()->this.listConsumersAsJSONInternal());
+   }
+
+   private String listConsumersAsJSONInternal() throws Exception {
       checkStarted();
 
       clearIO();
@@ -1319,6 +1768,14 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public void resetMessagesAdded() throws Exception {
+      audit(RESET_MESSAGES_ADDED, this.queue,
+         ()-> {
+            this.resetMessagesAddedInternal();
+            return null;
+         });
+   }
+
+   private void resetMessagesAddedInternal() throws Exception {
       checkStarted();
 
       clearIO();
@@ -1332,6 +1789,14 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public void resetMessagesAcknowledged() throws Exception {
+      audit(RESET_MESSAGES_ACKED, this.queue,
+         ()-> {
+            this.resetMessagesAcknowledgedInternal();
+            return null;
+         });
+   }
+
+   private void resetMessagesAcknowledgedInternal() throws Exception {
       checkStarted();
 
       clearIO();
@@ -1345,6 +1810,14 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public void resetMessagesExpired() throws Exception {
+      audit(RESET_MESSAGES_EXPIRED, this.queue,
+         ()-> {
+            this.resetMessagesExpiredInternal();
+            return null;
+         });
+   }
+
+   private void resetMessagesExpiredInternal() throws Exception {
       checkStarted();
 
       clearIO();
@@ -1358,6 +1831,14 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    @Override
    public void resetMessagesKilled() throws Exception {
+      audit(RESET_MESSAGES_KILLED, this.queue,
+         ()-> {
+            this.resetMessagesKilledInternal();
+            return null;
+         });
+   }
+
+   private void resetMessagesKilledInternal() throws Exception {
       checkStarted();
 
       clearIO();
