@@ -795,6 +795,11 @@ public final class ClusterConnectionImpl implements ClusterConnection, AfterConn
       }
    }
 
+   @Override
+   public SimpleString getAddress() {
+      return this.address;
+   }
+
    private void createNewRecord(final long eventUID,
                                 final String targetNodeID,
                                 final TransportConfiguration connector,
@@ -1109,9 +1114,27 @@ public final class ClusterConnectionImpl implements ClusterConnection, AfterConn
                doSessionCreated(message);
                break;
             }
+            case NODE_SCALEDDOWN: {
+               doNodeScaleDown(message);
+            }
             default: {
                throw ActiveMQMessageBundle.BUNDLE.invalidType(ntype);
             }
+         }
+      }
+
+      /*
+       * After a node is scaled down to a target node a NODE_SCALEDDOWN notification
+       * event is sent out from the target node, informing other live nodes in the
+       * cluster of the details of the scaledown. This message contains information
+       * about whether or not the scaledown intends to cleanup the store-and-forward
+       * queue resources associated with the scaledown node.
+       */
+      private synchronized void doNodeScaleDown(final ClientMessage message) throws Exception {
+         boolean isRemoveSf = message.getBooleanProperty(ManagementHelper.HDR_IS_REMOVE_SF);
+         if (isRemoveSf) {
+            SimpleString scaledDownNodeId = message.getSimpleStringProperty(ManagementHelper.HDR_SCALEDDOWN_NODE_ID);
+            removeSfQueue(scaledDownNodeId);
          }
       }
 

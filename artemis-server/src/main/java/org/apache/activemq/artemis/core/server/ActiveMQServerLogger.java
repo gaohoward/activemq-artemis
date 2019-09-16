@@ -46,6 +46,7 @@ import org.apache.activemq.artemis.core.server.cluster.impl.ClusterConnectionImp
 import org.apache.activemq.artemis.core.server.impl.ActiveMQServerImpl;
 import org.apache.activemq.artemis.core.server.impl.ServerSessionImpl;
 import org.apache.activemq.artemis.core.server.management.Notification;
+import org.apache.activemq.artemis.utils.collections.TypedProperties;
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
 import org.jboss.logging.annotations.Cause;
@@ -1641,6 +1642,10 @@ public interface ActiveMQServerLogger extends BasicLogger {
    @Message(id = 222282, value = "File {0} at {1} is empty. Delete the empty file to stop this message.",
       format = Message.Format.MESSAGE_FORMAT)
    void emptyAddressFile(String addressFile, String directory);
+
+   @LogMessage(level = Logger.Level.WARN)
+   @Message(id = 222283, value = "Failed to send scale down notification {0}", format = Message.Format.MESSAGE_FORMAT)
+   void failedToSendScaleDownNotification(@Cause Exception e, TypedProperties props);
 
    @LogMessage(level = Logger.Level.ERROR)
    @Message(id = 224000, value = "Failure in initialisation", format = Message.Format.MESSAGE_FORMAT)

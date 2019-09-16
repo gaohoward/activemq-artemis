@@ -88,6 +88,10 @@ public final class ManagementHelper {
 
    public static final SimpleString HDR_CLIENT_ID = new SimpleString("_AMQ_Client_ID");
 
+   public static final SimpleString HDR_IS_REMOVE_SF = new SimpleString("_AMQ_Is_Remove_SF");
+
+   public static final SimpleString HDR_SCALEDDOWN_NODE_ID = new SimpleString("_AMQ_ScaledDown_Node_ID");
+
    // Attributes ----------------------------------------------------
 
    // Static --------------------------------------------------------

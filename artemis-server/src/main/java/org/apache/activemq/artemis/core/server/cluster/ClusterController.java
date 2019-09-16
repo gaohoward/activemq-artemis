@@ -33,6 +33,8 @@ import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.api.core.client.ActiveMQClient;
 import org.apache.activemq.artemis.api.core.client.ClusterTopologyListener;
 import org.apache.activemq.artemis.api.core.client.ServerLocator;
+import org.apache.activemq.artemis.api.core.management.CoreNotificationType;
+import org.apache.activemq.artemis.api.core.management.ManagementHelper;
 import org.apache.activemq.artemis.core.client.impl.ClientSessionFactoryInternal;
 import org.apache.activemq.artemis.core.client.impl.ServerLocatorImpl;
 import org.apache.activemq.artemis.core.client.impl.ServerLocatorInternal;
@@ -56,7 +58,10 @@ import org.apache.activemq.artemis.core.server.cluster.qourum.QuorumManager;
 import org.apache.activemq.artemis.core.server.cluster.qourum.QuorumVoteHandler;
 import org.apache.activemq.artemis.core.server.cluster.qourum.Vote;
 import org.apache.activemq.artemis.core.server.impl.Activation;
+import org.apache.activemq.artemis.core.server.management.Notification;
 import org.apache.activemq.artemis.spi.core.remoting.Acceptor;
+import org.apache.activemq.artemis.utils.UUIDGenerator;
+import org.apache.activemq.artemis.utils.collections.TypedProperties;
 import org.jboss.logging.Logger;
 
 /**
@@ -412,6 +417,22 @@ public class ClusterController implements ActiveMQComponent {
                   Set<ClusterConnection> ccs = clusterManager.getClusterConnections();
                   for (ClusterConnection cc : ccs) {
                      cc.removeSfQueue(message.getScaledDownNodeId());
+
+                     //now notify the cluster to remove their sf queue
+                     TypedProperties props = new TypedProperties();
+
+                     props.putBooleanProperty(ManagementHelper.HDR_IS_REMOVE_SF, true);
+                     props.putSimpleStringProperty(ManagementHelper.HDR_SCALEDDOWN_NODE_ID, message.getScaledDownNodeId());
+                     props.putIntProperty(ManagementHelper.HDR_DISTANCE, 0);
+                     props.putSimpleStringProperty(ManagementHelper.HDR_ADDRESS, cc.getAddress());
+
+                     String uid = UUIDGenerator.getInstance().generateStringUUID();
+
+                     try {
+                        server.getManagementService().sendNotification(new Notification(uid, CoreNotificationType.NODE_SCALEDDOWN, props));
+                     } catch (Exception e) {
+                        ActiveMQServerLogger.LOGGER.failedToSendScaleDownNotification(e, props);
+                     }
                   }
                }
             } else if (channelHandler != null) {

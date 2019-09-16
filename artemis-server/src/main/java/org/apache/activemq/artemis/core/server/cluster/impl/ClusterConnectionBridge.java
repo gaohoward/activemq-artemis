@@ -61,6 +61,7 @@ import org.jboss.logging.Logger;
  * Such as such adding extra properties and setting up notifications between the nodes.
  */
 public class ClusterConnectionBridge extends BridgeImpl {
+
    private static final Logger logger = Logger.getLogger(ClusterConnectionBridge.class);
 
    private final ClusterConnection clusterConnection;
@@ -248,6 +249,8 @@ public class ClusterConnectionBridge extends BridgeImpl {
                                                    CoreNotificationType.PROPOSAL_RESPONSE +
                                                    "','" +
                                                    CoreNotificationType.UNPROPOSAL +
+                                                   "','" +
+                                                   CoreNotificationType.NODE_SCALEDDOWN +
                                                    "') AND " +
                                                    ManagementHelper.HDR_DISTANCE +
                                                    "<" +

@@ -104,4 +104,6 @@ public interface ClusterConnection extends ActiveMQComponent, ClusterTopologyLis
    void removeSfQueue(SimpleString scaledDownNodeId);
 
    void removeSfQueue(Queue queue);
+
+   SimpleString getAddress();
 }

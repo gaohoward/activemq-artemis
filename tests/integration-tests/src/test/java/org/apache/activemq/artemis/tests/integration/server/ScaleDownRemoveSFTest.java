@@ -99,6 +99,13 @@ public class ScaleDownRemoveSFTest extends ClusterTestBase {
       createQueue(0, addressName, queueName1, null, true);
       createQueue(1, addressName, queueName1, null, true);
 
+      waitForBindings(0, addressName, 1, 0, true);
+      waitForBindings(0, addressName, 1, 0, false);
+      waitForBindings(1, addressName, 1, 0, true);
+      waitForBindings(1, addressName, 1, 0, false);
+
+      SimpleString node0Id = servers[0].getNodeID();
+
       // send messages to node 0
       send(0, addressName, TEST_SIZE, true, null);
 
@@ -113,7 +120,7 @@ public class ScaleDownRemoveSFTest extends ClusterTestBase {
 
       //check sf queue on server1 exists
       ClusterConnectionImpl clusterconn1 = (ClusterConnectionImpl) servers[1].getClusterManager().getClusterConnection("cluster0");
-      SimpleString sfQueueName = clusterconn1.getSfQueueName(servers[0].getNodeID().toString());
+      SimpleString sfQueueName = clusterconn1.getSfQueueName(node0Id.toString());
 
       System.out.println("[sf queue on server 1]: " + sfQueueName);
       QueueQueryResult result = servers[1].queueQuery(sfQueueName);
@@ -142,7 +149,6 @@ public class ScaleDownRemoveSFTest extends ClusterTestBase {
          assertTrue(result.isExists());
          assertTrue(result2.isExists());
       }
-
    }
 
 }
